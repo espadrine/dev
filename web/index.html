@@ -13,7 +13,7 @@
 
   <iframe id=preview class=right></iframe>
   
-  <script src=js/sclib.js></script>
+  <script src=js/sclibmin.js></script>
   <script src=js/codemirror.js></script>
   <script src=js/diff_match_patch.js></script>
   <script src=js/diff.js></script>
@@ -37,7 +37,7 @@
       path: "js/"
     });
 
-    /*setInterval(Scout.send(function(xhr, params){
+    setInterval(Scout.send(function(xhr, params){
 	
       var dmp = new diff_match_patch();
       var bufcopy = editor.editor.getCode();
@@ -70,7 +70,7 @@
 		editor.editor.selectLines(pos.line, pos.character);
       };
 	  
-    }), client.timeout);*/
+    }), client.timeout);
   
     setInterval((function() {
 	  preview = document.getElementById('preview');
