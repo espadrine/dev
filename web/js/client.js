@@ -45,7 +45,23 @@ setInterval(Scout.send(function(xhr, params){
 	client.delta = Diff.solve(Diff.delta(dmp.diff_main(bufcopy, text)), resp.delta);
 	text = Diff.applydelta(resp.delta, text);
 	client.copy = text;
-	editor.setCode(Diff.applydelta(client.delta, text));
+	
+	//editor.setCode(Diff.applydelta(client.delta, text));
+	//[[1,'trolo',15]]
+	var compte = 0;
+	var line = editor.firstLine();
+	for(var i = 0 ; i < client.delta.length ; i++ ) {
+	  while(client.delta[i][2] > (compte + editor.lineContent(line).length)) {
+	    compte += editor.lineContent(line).length;
+		line = editor.nextLine(line);
+	  }
+	  if(client.delta[i][0] == 1) {
+		editor.insertIntoLine(line, client.delta[i][2] - compte, client.delta[i][1]);
+	  }
+	  else {
+	    editor.removeFromLine(line, client.delta[i][2] - compte, client.delta[i][1]);
+      }
+	}
 	
 	// this doesn't actually select lines, it places the cursor to the old position
 	editor.selectLines(pos.line, pos.character);
