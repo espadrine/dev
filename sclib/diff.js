@@ -69,6 +69,10 @@ var solve = function (delta, newdelta) {
     /* Solve each new modification in order. */
     var nd = newdelta[i];
     for (var j = 0; j < delta.length; j++) {
+      nd = newdelta[i];
+      if (nd === undefined) {
+        break;
+      }
       switch (nd[0]) {
 
         case 0:  /* Deletion. */
@@ -185,8 +189,10 @@ var solveLeftOfDel = function (delta, newdelta, i, j) {
 
 /* Export. */
 
-exports.delta = delta;
-exports.applydelta = applydelta;
-exports.solve = solve;
+window.Diff = {
+  delta: delta,
+  applydelta: applydelta,
+  solve: solve
+};
 
 })();
