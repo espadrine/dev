@@ -33,9 +33,23 @@ exports.Camp.start = function (port) {
         var action = path.slice (3);
         
         res.writeHead(200, {'Content-Type': 'application/json'});
-        var resp = JSON.stringify (exports.Camp.Actions[action] (query));
-        res.write(resp);
-        res.end();
+        req.on ('data', function (chunk) {
+
+          /* Parse the chunk (it is an object literal). */
+          query = qs.parse (chunk);
+          for (var el in query) {
+            query[el] = JSON.parse (query[el]);
+          }
+          /* Launch the defined action. */
+          if (exports.Camp.Actions[action]) {
+            var resp = JSON.stringify (exports.Camp.Actions[action] (query));
+            res.write (resp);
+            res.end ();
+          } else {
+            res.write ('404');
+            res.end ();
+          }
+        });
       
       } else	{
         console.log(path);
@@ -48,7 +62,7 @@ exports.Camp.start = function (port) {
     }
     catch(e) {
       res.writeHead(404);
-      res.write('404: thou hast finished me!');
+      res.write('404: thou hast finished me!\n');
       res.write(e.toString());
       res.end();
     }

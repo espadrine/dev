@@ -13,7 +13,7 @@
 
   <iframe id=preview class=right></iframe>
   
-  <script src=js/sclibmin.js></script>
+  <script src=js/scoutmin.js></script>
   <script src=js/codemirror.js></script>
   <script src=js/diff_match_patch.js></script>
   <script src=js/diff.js></script>
@@ -64,7 +64,7 @@
         client.delta = Diff.solve(Diff.delta(dmp.diff_main(bufcopy, text)), resp.delta);
         text = Diff.applydelta(resp.delta, text);
         client.copy = text;
-        editor.setCode(Diff.applydelta(delta, text));
+        editor.setCode(Diff.applydelta(client.delta, text));
 		
 		// this doesn't actually select lines, it places the cursor to the old position
 		editor.selectLines(pos.line, pos.character);
