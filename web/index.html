@@ -40,7 +40,7 @@
     setInterval(Scout.send(function(xhr, params){
 	
       var dmp = new diff_match_patch();
-      var bufcopy = editor.editor.getCode();
+      var bufcopy = editor.getCode();
 	
       params.data = {
         usr: client.usr,
@@ -57,24 +57,24 @@
       params.resp = function(xhr, resp) {
 		client.rev = resp.rev;
 		client.delta = [];
-		var pos = editor.editor.cursorPosition(true);
-		var text = editor.editor.getCode();
+		var pos = editor.cursorPosition(true);
+		var text = editor.getCode();
 		
 		var dmp = new diff_match_patch();
         client.delta = Diff.solve(Diff.delta(dmp.diff_main(bufcopy, text)), resp.delta);
         text = Diff.applydelta(resp.delta, text);
         client.copy = text;
-        editor.editor.setCode(Diff.applydelta(delta, text));
+        editor.setCode(Diff.applydelta(delta, text));
 		
 		// this doesn't actually select lines, it places the cursor to the old position
-		editor.editor.selectLines(pos.line, pos.character);
+		editor.selectLines(pos.line, pos.character);
       };
 	  
     }), client.timeout);
   
     setInterval((function() {
 	  preview = document.getElementById('preview');
-	  return function() { preview.contentDocument.open(); preview.contentDocument.write(editor.editor.getCode()); preview.contentDocument.close(); }
+	  return function() { preview.contentDocument.open(); preview.contentDocument.write(editor.getCode()); preview.contentDocument.close(); }
 	})(), 500);
 	
   </script>
