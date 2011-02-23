@@ -185,7 +185,7 @@ var solveLeftOfDel = function (delta, newdelta, i, j) {
 
 /* Export. */
 
-window.exports = {
+exports = {
   delta: delta,
   applydelta: applydelta,
   solve: solve
