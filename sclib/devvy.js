@@ -5,17 +5,16 @@ INITREV = 0;
 COPY = '';
 ID = 0;
 
+Diff = require ('./diff.js');
+
 server = (function () {
 
   var rev = INITREV;
   var copy = COPY;
   var deltas = [];
 
-  /* Dom. */
 
-  var para = document.getElementById('main');
-
-  return function (theirrev, delta, callback) {
+  return function (theirrev, delta) {
     /* Change in the copy. */
 
     var senddelta = [];
@@ -34,21 +33,22 @@ server = (function () {
         /* Solve conflicts with previous revisions. */
         Diff.solve(senddelta, delta);
 
-        callback(rev+1, senddelta);
+        json = {rev:rev+1, delta:senddelta};
 
       } else {
         /* There were no changes since. */
-        callback(rev+1, []);
+        json = {rev:rev+1, delta:[]};
       }
 
       deltas[rev++] = delta;
       copy = Diff.applydelta(delta, copy);
-      para.textContent = copy;
 
     } else {
       /* He did not change his copy. */
-      callback(rev, senddelta);
+      json = {rev:rev, delta:senddelta};
     }
+
+    return json;
 
   };
 
@@ -60,7 +60,7 @@ server = (function () {
 var Camp = require('./camp.js');
 
 Camp.Camp('change', function (query) {
-	return {hello: 'world'};
+  return server(query.rev, query.delta);
 });
 	
 Camp.Camp.start();
