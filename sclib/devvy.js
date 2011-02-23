@@ -60,7 +60,7 @@ server = (function () {
 var Camp = require('./camp.js');
 
 Camp.Camp('change', function (query) {
-  return server(q.rev, q.delta);
+  return server(query.rev, query.delta);
 });
 	
 Camp.Camp.start();
