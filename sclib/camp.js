@@ -40,6 +40,7 @@ exports.Camp.start = function (port) {
           for (var el in query) {
             query[el] = JSON.parse (query[el]);
           }
+
           /* Launch the defined action. */
           if (exports.Camp.Actions[action]) {
             var resp = JSON.stringify (exports.Camp.Actions[action] (query));
@@ -49,6 +50,7 @@ exports.Camp.start = function (port) {
             res.write ('404');
             res.end ();
           }
+
         });
       
       } else	{

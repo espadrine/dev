@@ -24,7 +24,7 @@ server = (function () {
       }
     }
 
-    if (delta.length !== 0) {
+    if (delta && delta.length !== 0) {
       /* He brings a change. */
 
       if (theirrev <= rev) {

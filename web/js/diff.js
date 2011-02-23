@@ -69,6 +69,10 @@ var solve = function (delta, newdelta) {
     /* Solve each new modification in order. */
     var nd = newdelta[i];
     for (var j = 0; j < delta.length; j++) {
+      nd = newdelta[i];
+      if (nd === undefined) {
+        break;
+      }
       switch (nd[0]) {
 
         case 0:  /* Deletion. */
