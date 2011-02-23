@@ -60,11 +60,6 @@ server = (function () {
 var Camp = require('./camp.js');
 
 Camp.Camp('change', function (query) {
-  var q;
-  for (var el in query) {
-    q[el] = JSON.parse (query);
-  }
-
   return server(q.rev, q.delta);
 });
 	
