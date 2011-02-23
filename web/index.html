@@ -64,7 +64,7 @@
         client.delta = Diff.solve(Diff.delta(dmp.diff_main(bufcopy, text)), resp.delta);
         text = Diff.applydelta(resp.delta, text);
         client.copy = text;
-        editor.editor.setCode(Diff.applydelta(delta, text));
+        editor.editor.setCode(Diff.applydelta(client.delta, text));
 		
 		// this doesn't actually select lines, it places the cursor to the old position
 		editor.editor.selectLines(pos.line, pos.character);
