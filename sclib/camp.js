@@ -34,10 +34,21 @@ exports.Camp.start = function (port) {
         
         res.writeHead(200, {'Content-Type': 'application/json'});
         req.on ('data', function (chunk) {
+
+          /* Parse the chunk (it is an object literal). */
           query = qs.parse (chunk);
-          var resp = JSON.stringify (exports.Camp.Actions[action] (query));
-          res.write(resp);
-          res.end();
+          for (var el in query) {
+            query[el] = JSON.parse (query[el]);
+          }
+          /* Launch the defined action. */
+          if (exports.Camp.Actions[action]) {
+            var resp = JSON.stringify (exports.Camp.Actions[action] (query));
+            res.write (resp);
+            res.end ();
+          } else {
+            res.write ('404');
+            res.end ();
+          }
         });
       
       } else	{

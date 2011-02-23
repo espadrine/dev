@@ -60,11 +60,12 @@ server = (function () {
 var Camp = require('./camp.js');
 
 Camp.Camp('change', function (query) {
+  var q;
   for (var el in query) {
-    query[el] = JSON.parse (query);
+    q[el] = JSON.parse (query);
   }
 
-  return server(query.rev, query.delta);
+  return server(q.rev, q.delta);
 });
 	
 Camp.Camp.start();
