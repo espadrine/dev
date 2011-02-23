@@ -5,7 +5,7 @@ INITREV = 0;
 COPY = '';
 ID = 0;
 
-Diff = require ('./diff.js');
+var Diff = require ('./diff.js');
 
 server = (function () {
 

@@ -185,10 +185,8 @@ var solveLeftOfDel = function (delta, newdelta, i, j) {
 
 /* Export. */
 
-exports = {
-  delta: delta,
-  applydelta: applydelta,
-  solve: solve
-};
+exports.delta = delta;
+exports.applydelta = applydelta;
+exports.solve = solve;
 
 })();

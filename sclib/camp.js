@@ -33,9 +33,12 @@ exports.Camp.start = function (port) {
         var action = path.slice (3);
         
         res.writeHead(200, {'Content-Type': 'application/json'});
-        var resp = JSON.stringify (exports.Camp.Actions[action] (query));
-        res.write(resp);
-        res.end();
+        req.on ('data', function (chunk) {
+          query = qs.parse (chunk);
+          var resp = JSON.stringify (exports.Camp.Actions[action] (query));
+          res.write(resp);
+          res.end();
+        });
       
       } else	{
         console.log(path);
@@ -48,7 +51,7 @@ exports.Camp.start = function (port) {
     }
     catch(e) {
       res.writeHead(404);
-      res.write('404: thou hast finished me!');
+      res.write('404: thou hast finished me!\n');
       res.write(e.toString());
       res.end();
     }
