@@ -33,11 +33,9 @@ Scout('#t0but').on('click', function (xhr, ev, params) {
 
   params.resp = function(xhr, resp) {
     client.rev = resp.rev;
-
     client.delta = [];
     var dmp = new diff_match_patch();
-    client.delta = Diff.solve(Diff.delta(dmp.diff_main(bufcopy, text.value)),
-        resp.delta);
+    client.delta = Diff.solve(Diff.delta(dmp.diff_main(bufcopy, text.value)), resp.delta);
     text.value = Diff.applydelta(resp.delta, text.value);
     client.lastcopy = text.value;
     text.value = Diff.applydelta(client.delta, text.value);
