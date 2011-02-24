@@ -136,6 +136,7 @@ var auto = function () {
     var num = Math.floor(Math.random()*2);
     switch(Math.floor(Math.random()*3)) {
     case 0: //push
+      alert(num);
       document.getElementById('t'+num+'but').click();
       if(lastcopy.textContent != area[num].value) { // found a bug
         bug = true;
