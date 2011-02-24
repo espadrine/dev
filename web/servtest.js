@@ -9,7 +9,7 @@ window.client = {
   delta: []
 };
 
-Scout('t0but').on('click', function (xhr, ev, params) {
+Scout('#t0but').on('click', function (xhr, ev, params) {
   var text = document.getElementById('t0');
 
   var dmp = new diff_match_patch();
