@@ -46,8 +46,6 @@ setInterval(Scout.send(function(xhr, params){
 	text = Diff.applydelta(resp.delta, text);
 	client.copy = text;
 	
-	//editor.setCode(Diff.applydelta(client.delta, text));
-	//[[1,'trolo',15]]
 	var compte = 0;
 	var line = editor.firstLine();
 	for(var i = 0 ; i < client.delta.length ; i++ ) {
