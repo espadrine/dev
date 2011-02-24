@@ -39,7 +39,7 @@ exports.Camp.start = function (port) {
           query = qs.parse (chunk);
           for (var el in query) {
             try {
-              query[el] = JSON.parse (qs.unescape(query[el]));
+              query[el] = JSON.parse (unescape(query[el]));
             } catch (e) {
               console.log ('query[el]: ' + query[el] + ' ' + e);
             }
