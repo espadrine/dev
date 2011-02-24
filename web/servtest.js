@@ -5,7 +5,7 @@ window.COPY = '';
 /* Send the data to the server. Hold the state. */
 window.client = {
   rev: INITREV,
-  copy: COPY,
+  lastcopy: COPY,
   delta: []
 };
 
@@ -13,12 +13,14 @@ Scout('#t0but').on('click', function (xhr, ev, params) {
   var text = document.getElementById('t0');
 
   var dmp = new diff_match_patch();
+  var diff = dmp.diff_main(client.lastcopy, text.value);
+  client.delta = Diff.delta(diff);
   var bufcopy = text.value;
 
   params.data = {
   usr: client.usr,
   rev: client.rev,
-  delta: Diff.delta(dmp.diff_main(client.copy, text.value))
+  delta: client.delta
   };
 
   //if(params.data.delta !== undefined) { alert("send "+JSON.stringify(params.data.delta)); }
@@ -34,10 +36,10 @@ Scout('#t0but').on('click', function (xhr, ev, params) {
 
     client.delta = [];
     var dmp = new diff_match_patch();
-    var delt = Diff.delta(dmp.diff_main(bufcopy, text.value));
-    client.delta = Diff.solve(delt, resp.delta);
+    client.delta = Diff.solve(Diff.delta(dmp.diff_main(bufcopy, text.value)),
+        res);
     text.value = Diff.applydelta(resp.delta, text.value);
-    lastcopy = text.value;
+    client.lastcopy = text.value;
     text.value = Diff.applydelta(client.delta, text.value);
   };
 });
