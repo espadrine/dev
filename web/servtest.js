@@ -5,7 +5,7 @@ window.COPY = '';
 /* Send the data to the server. Hold the state. */
 window.client = {
   rev: INITREV,
-  lastcopy: COPY,
+  copy: COPY,
   delta: []
 };
 
