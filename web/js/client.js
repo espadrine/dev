@@ -54,9 +54,11 @@ setInterval(Scout.send(function(xhr, params){
 		line = editor.nextLine(line);
 	  }
 	  if(resp.delta[i][0] == 1) {
+	    alert("insert "+JSON.stringify(resp.delta[i]));
 		editor.insertIntoLine(line, resp.delta[i][2] - compte, resp.delta[i][1]);
 	  }
 	  else {
+	    alert("remove "+JSON.stringify(resp.delta[i]));
 	    editor.removeFromLine(line, resp.delta[i][2] - compte, resp.delta[i][1]);
       }
 	}
