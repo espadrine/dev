@@ -62,7 +62,7 @@ setInterval(Scout.send(function(xhr, params){
 	}
 	
 	// this doesn't actually select lines, it places the cursor to the old position
-	editor.selectLines(pos.line, pos.character);
+	//editor.selectLines(pos.line, pos.character);
   };
   
 }), client.timeout);
