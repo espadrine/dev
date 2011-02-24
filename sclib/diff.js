@@ -191,10 +191,8 @@ var solveLeftOfDel = function (delta, newdelta, ij) {
 
 /* Export. */
 
-exports.Diff = {
-  delta: delta,
-  applydelta: applydelta,
-  solve: solve
-};
+exports.delta = delta;
+exports.applydelta = applydelta;
+exports.solve = solve;
 
 })();

@@ -191,10 +191,9 @@ var solveLeftOfDel = function (delta, newdelta, ij) {
 
 /* Export. */
 
-window.Diff = {
-  delta: delta,
-  applydelta: applydelta,
-  solve: solve
-};
+window.Diff = {};
+window.Diff.delta = delta;
+window.Diff.applydelta = applydelta;
+window.Diff.solve = solve;
 
 })();
