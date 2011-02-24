@@ -13,12 +13,12 @@ Scout('#t0but').on('click', function (xhr, ev, params) {
   var text = document.getElementById('t0');
 
   var dmp = new diff_match_patch();
-  var bufcopy = text.textContent;
+  var bufcopy = text.value;
 
   params.data = {
   usr: client.usr,
   rev: client.rev,
-  delta: Diff.delta(dmp.diff_main(client.copy, text.textContent))
+  delta: Diff.delta(dmp.diff_main(client.copy, text.value))
   };
 
   if(params.delta !== undefined) { alert("send "+JSON.stringify(params.delta)); }
