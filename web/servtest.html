@@ -53,7 +53,7 @@ window.client = (function () {
       params.data = {
 	    usr: client.usr,
 	    rev: client.rev,
-	    delta: Diff.delta(dmp.diff_main(client.copy, editor.editor.getCode()))
+	    delta: Diff.delta(dmp.diff_main(client.copy, editor.getCode()))
       };
   
       if(params.delta !== undefined) { alert("send "+JSON.stringify(params.delta)); }
