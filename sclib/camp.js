@@ -38,7 +38,11 @@ exports.Camp.start = function (port) {
           /* Parse the chunk (it is an object literal). */
           query = qs.parse (chunk);
           for (var el in query) {
-            query[el] = JSON.parse (query[el]);
+            try {
+              query[el] = JSON.parse (query[el]);
+            } catch (e) {
+              console.log ('query[el]: ' + query[el] + ' ' + e);
+            }
           }
 
           /* Launch the defined action. */
