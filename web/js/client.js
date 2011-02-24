@@ -24,17 +24,17 @@ window.extenditor = {
     var car = 0;
 	var line = editor.firstLine();
 	for(var i = 0 ; i < delta.length ; i++ ) {
-	  while(delta[i][2] > (compte + editor.lineContent(line).length)) {
-	    compte += editor.lineContent(line).length;
+	  while(delta[i][2] > (car + editor.lineContent(line).length)) {
+	    car += editor.lineContent(line).length;
 		line = editor.nextLine(line);
 	  }
 	  if(delta[i][0] == 1) {
 	    //alert("insert "+JSON.stringify(delta[i]));
-		editor.insertIntoLine(line, resp.delta[i][2] - compte, delta[i][1]);
+		editor.insertIntoLine(line, resp.delta[i][2] - car, delta[i][1]);
 	  }
 	  else {
 	    //alert("remove "+JSON.stringify(delta[i]));
-	    editor.removeFromLine(line, resp.delta[i][2] - compte, delta[i][1]);
+	    editor.removeFromLine(line, resp.delta[i][2] - car, delta[i][1]);
       }
 	}
   }
