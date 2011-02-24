@@ -40,8 +40,6 @@ window.extenditor = {
   }
 };
 
-window.editor.applydelta = 
-
 setInterval(Scout.send(function(xhr, params){
 
   var bufcopy = editor.getCode();
