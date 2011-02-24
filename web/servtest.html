@@ -48,12 +48,12 @@ window.client = (function () {
 	Scout.send(function(xhr, params){
 
       var dmp = new diff_match_patch();
-      var bufcopy = editor.getCode();
+      var bufcopy = text.textContent;
 
       params.data = {
 	    usr: client.usr,
 	    rev: client.rev,
-	    delta: Diff.delta(dmp.diff_main(client.copy, editor.getCode()))
+	    delta: Diff.delta(dmp.diff_main(client.copy, text.textContent))
       };
   
       if(params.delta !== undefined) { alert("send "+JSON.stringify(params.delta)); }
