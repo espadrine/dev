@@ -26,7 +26,7 @@ setInterval(Scout.send(function(xhr, params){
   params.data = {
 	usr: client.usr,
 	rev: client.rev,
-	delta: Diff.delta(dmp.diff_main(client.copy, editor.editor.getCode()))
+	delta: Diff.delta(dmp.diff_main(editor.editor.getCode(), client.copy))
   };
   
   params.error = function(xhr, status) {
