@@ -48,16 +48,16 @@ setInterval(Scout.send(function(xhr, params){
 	
 	var compte = 0;
 	var line = editor.firstLine();
-	for(var i = 0 ; i < client.delta.length ; i++ ) {
-	  while(client.delta[i][2] > (compte + editor.lineContent(line).length)) {
+	for(var i = 0 ; i < resp.delta.length ; i++ ) {
+	  while(resp.delta[i][2] > (compte + editor.lineContent(line).length)) {
 	    compte += editor.lineContent(line).length;
 		line = editor.nextLine(line);
 	  }
-	  if(client.delta[i][0] == 1) {
-		editor.insertIntoLine(line, client.delta[i][2] - compte, client.delta[i][1]);
+	  if(resp.delta[i][0] == 1) {
+		editor.insertIntoLine(line, resp.delta[i][2] - compte, resp.delta[i][1]);
 	  }
 	  else {
-	    editor.removeFromLine(line, client.delta[i][2] - compte, client.delta[i][1]);
+	    editor.removeFromLine(line, resp.delta[i][2] - compte, resp.delta[i][1]);
       }
 	}
 	
