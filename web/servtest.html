@@ -27,59 +27,43 @@ window.COPY = '';
 
 
 /* Send the data to the server. Hold the state. */
-window.client = (function () {
+window.client = {
+  rev: INITREV,
+  lastcopy: COPY,
+  delta: []
+};
 
-  var rev = INITREV;
-  var lastcopy = COPY;
-  var delta = [];
-
-  /* Dom. */
+Scout('t0but').on('click', function (xhr, ev, params) {
   var text = document.getElementById('t0');
 
-  return function (e) {
-    /* Send the delta to the server. */
+  var dmp = new diff_match_patch();
+  var bufcopy = text.textContent;
 
-    var dmp = new diff_match_patch();
-    var diff = dmp.diff_main(lastcopy, text.value);
-    delta = Diff.delta(diff);
-    var bufcopy = text.value;
-
-	
-	Scout.send(function(xhr, params){
-
-      var dmp = new diff_match_patch();
-      var bufcopy = text.textContent;
-
-      params.data = {
-	    usr: client.usr,
-	    rev: client.rev,
-	    delta: Diff.delta(dmp.diff_main(client.copy, text.textContent))
-      };
-  
-      if(params.delta !== undefined) { alert("send "+JSON.stringify(params.delta)); }
-      
-      params.error = function(xhr, status) {
-	    // TODO
-      };    
-  
-      params.open.url = '/_/change';
-  
-      params.resp = function(xhr, resp) {
-    	client.rev = resp.rev;
-
-        client.delta = [];
-        var dmp = new diff_match_patch();
-        client.delta = Diff.solve(Diff.delta(dmp.diff_main(bufcopy, text.value)), resp.delta);
-        text.value = Diff.applydelta(resp.delta, text.value);
-        lastcopy = text.value;
-        text.value = Diff.applydelta(client.delta, text.value);
-      };
-    });
-
+  params.data = {
+  usr: client.usr,
+  rev: client.rev,
+  delta: Diff.delta(dmp.diff_main(client.copy, text.textContent))
   };
 
-});
+  if(params.delta !== undefined) { alert("send "+JSON.stringify(params.delta)); }
+  
+  params.error = function(xhr, status) {
+  // TODO
+  };    
 
-document.getElementById('t0but').addEventListener('click', client(), false);
+  params.open.url = '/_/change';
+
+  params.resp = function(xhr, resp) {
+    client.rev = resp.rev;
+
+    client.delta = [];
+    var dmp = new diff_match_patch();
+    var delt = Diff.delta(dmp.diff_main(bufcopy, text.value));
+    client.delta = Diff.solve(delt, resp.delta);
+    text.value = Diff.applydelta(resp.delta, text.value);
+    lastcopy = text.value;
+    text.value = Diff.applydelta(client.delta, text.value);
+  };
+});
 
 </script>
