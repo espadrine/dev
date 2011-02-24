@@ -36,7 +36,7 @@ exports.Camp.start = function (port) {
         req.on ('data', function (chunk) {
 
           /* Parse the chunk (it is an object literal). */
-          query = qs.parse (chunk);
+          query = qs.parse (unescape(chunk));
           for (var el in query) {
             try {
               query[el] = JSON.parse (unescape(query[el]));
