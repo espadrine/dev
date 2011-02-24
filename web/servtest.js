@@ -21,7 +21,7 @@ Scout('#t0but').on('click', function (xhr, ev, params) {
   delta: Diff.delta(dmp.diff_main(client.copy, text.value))
   };
 
-  if(params.data.delta !== undefined) { alert("send "+JSON.stringify(params.delta)); }
+  //if(params.data.delta !== undefined) { alert("send "+JSON.stringify(params.data.delta)); }
   
   params.error = function(xhr, status) {
   // TODO
