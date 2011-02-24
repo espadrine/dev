@@ -26,8 +26,10 @@ setInterval(Scout.send(function(xhr, params){
   params.data = {
 	usr: client.usr,
 	rev: client.rev,
-	delta: Diff.delta(dmp.diff_main(client.copy, editor.editor.getCode()))
+	delta: Diff.delta(dmp.diff_main(editor.editor.getCode(), client.copy))
   };
+  
+  alert("send "+JSON.stringify(params.delta));
   
   params.error = function(xhr, status) {
 	// TODO
@@ -45,10 +47,26 @@ setInterval(Scout.send(function(xhr, params){
 	client.delta = Diff.solve(Diff.delta(dmp.diff_main(bufcopy, text)), resp.delta);
 	text = Diff.applydelta(resp.delta, text);
 	client.copy = text;
-	editor.setCode(Diff.applydelta(client.delta, text));
+	
+	var compte = 0;
+	var line = editor.firstLine();
+	for(var i = 0 ; i < resp.delta.length ; i++ ) {
+	  while(resp.delta[i][2] > (compte + editor.lineContent(line).length)) {
+	    compte += editor.lineContent(line).length;
+		line = editor.nextLine(line);
+	  }
+	  if(resp.delta[i][0] == 1) {
+	    alert("insert "+JSON.stringify(resp.delta[i]));
+		editor.insertIntoLine(line, resp.delta[i][2] - compte, resp.delta[i][1]);
+	  }
+	  else {
+	    alert("remove "+JSON.stringify(resp.delta[i]));
+	    editor.removeFromLine(line, resp.delta[i][2] - compte, resp.delta[i][1]);
+      }
+	}
 	
 	// this doesn't actually select lines, it places the cursor to the old position
-	editor.selectLines(pos.line, pos.character);
+	//editor.selectLines(pos.line, pos.character);
   };
   
 }), client.timeout);
