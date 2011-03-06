@@ -58,9 +58,11 @@ setInterval(Scout.send(function(xhr, params){
     // TODO
   };
   
+  params.open.url = '/_/change';
   
   params.resp = function(xhr, resp) {
 	
+    client.rev = resp.rev;
     client.delta = [];
     
     var dmp = new diff_match_patch();
@@ -72,49 +74,9 @@ setInterval(Scout.send(function(xhr, params){
 	
   };
   
-    if(client.delta.length > 0) {
-      var disp = 'send ';
-      for (var i in client.delta) {
-        disp += (client.delta[i][0] === 1 ? '[insert ' : '[remove ')+JSON.stringify(client.delta[i])+'] ';
-      }
-      console.log(disp);
-    }
-
-    params.data = {
-  	usr: client.usr,
-  	rev: client.rev,
-  	delta: client.delta
-    };
-    
-    params.error = function(xhr, status) {
-  	// TODO
-    };
-    
-    params.open.url = '/_/change';
-    
-    params.resp = function(xhr, resp) {
-
-        client.rev = resp.rev;
-        client.delta = [];
-
-        if(resp.delta.length > 0) {  	
-  	  
-          var code = editor.getCode(); // note : window.editor.getCode() does not work here
-  	  var dmp = new diff_match_patch();
-  	  client.delta = Diff.solve(Diff.delta(dmp.diff_main(bufcopy, code)), resp.delta);
-  	
-  	  extenditor.applydelta(resp.delta, editor);
-  	  client.lastcopy = editor.getCode();
-  	  extenditor.applydelta(client.delta, editor);
-
-  	}
-    };
-    
-  }), client.timeout);
-
-})();
+}), client.timeout);
 
 setInterval((function() {
   preview = document.getElementById('preview');
-  return function() { preview.contentDocument.open(); preview.contentDocument.write(editor.getCode()); preview.contentDocument.close(); } // editor.getCode() or window.editor.getCode() ?? seems random
+  return function() { preview.contentDocument.open(); preview.contentDocument.write(editor.getCode()); preview.contentDocument.close(); }
 })(), 500);
