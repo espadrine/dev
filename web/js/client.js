@@ -44,9 +44,9 @@ window.extenditor = {
 
 setInterval(Scout.send(function(xhr, params){
 
-  var bufcopy = editor.getCode();
+  var bufcopy = window.editor.getCode();
   var dmp = new diff_match_patch();
-  client.delta = Diff.delta(dmp.diff_main(client.lastcopy, editor.getCode()));
+  client.delta = Diff.delta(dmp.diff_main(client.lastcopy, window.editor.getCode()));
 
   params.data = {
     usr: client.usr,
@@ -66,11 +66,11 @@ setInterval(Scout.send(function(xhr, params){
     client.delta = [];
     
     var dmp = new diff_match_patch();
-    client.delta = Diff.solve(Diff.delta(dmp.diff_main(bufcopy, editor.getCode())), resp.delta);
+    client.delta = Diff.solve(Diff.delta(dmp.diff_main(bufcopy, window.editor.getCode())), resp.delta);
     
-    extenditor.applydelta(resp.delta, editor);
-    client.lastcopy = editor.getCode();
-    extenditor.applydelta(client.delta, editor);
+    extenditor.applydelta(resp.delta, window.editor);
+    client.lastcopy = window.editor.getCode();
+    extenditor.applydelta(client.delta, window.editor);
 	
   };
   
