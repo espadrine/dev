@@ -669,24 +669,24 @@ var Editor = (function(){
     },
 
     removeFromLine: function(line, position, span) {
-      var before = null;
-      if (position == "end") {
-        before = endOfLine(line, this.container);
-      }
-      else {
-	    while(this.lineContent(line).length < position + span) {
+      //var before = null;
+      //if (position == "end") {
+        //before = endOfLine(line, this.container);
+      //}
+      //else {
+	    while(this.lineContent(line).length < position + span && this.nextLine(line)) {
 		  this.insertIntoLine(line, "end", this.lineContent(this.nextLine(line)));
 		  this.removeLine(this.nextLine(line));
 		  span--;
 		}
 		this.setLineContent(line, this.lineContent(line).slice(0,position) + this.lineContent(line).slice(position + span));
-      }
+      //}
 
-      var lines = asEditorLines(content);
-      for (var i = 0; i < lines.length; i++) {
-        if (i > 0) this.container.insertBefore(document.createElement("BR"), before);
-        this.container.insertBefore(makePartSpan(lines[i]), before);
-      }
+      //var lines = asEditorLines(content);
+      //for (var i = 0; i < lines.length; i++) {
+        //if (i > 0) this.container.insertBefore(document.createElement("BR"), before);
+        //this.container.insertBefore(makePartSpan(lines[i]), before);
+      //}
       this.addDirtyNode(line);
       this.scheduleHighlight();
     },
