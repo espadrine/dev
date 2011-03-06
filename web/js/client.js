@@ -32,12 +32,12 @@ window.extenditor = {
       var pos = (delta[i][2] - car < max ? delta[i][2] - car : "end" );
       if(delta[i][0] == 1) {
         //alert("insert "+JSON.stringify(delta[i]));
-      editor.insertIntoLine(line, pos, delta[i][1]);
+        editor.insertIntoLine(line, pos, delta[i][1]);
       }
       else {
         //alert("remove "+JSON.stringify(delta[i]));
         editor.removeFromLine(line, pos, delta[i][1]);
-        }
+      }
     }
   }
 };
@@ -49,13 +49,13 @@ setInterval(Scout.send(function(xhr, params){
   client.delta = Diff.delta(dmp.diff_main(client.lastcopy, editor.getCode()));
 
   params.data = {
-	usr: client.usr,
-	rev: client.rev,
-	delta: client.delta
+    usr: client.usr,
+    rev: client.rev,
+    delta: client.delta
   };
   
   params.error = function(xhr, status) {
-	// TODO
+    // TODO
   };
   
   params.open.url = '/_/change';

@@ -669,18 +669,18 @@ var Editor = (function(){
     },
 
     removeFromLine: function(line, position, length) {
-	  while(this.lineContent(line).length < position + length) {
-		this.insertIntoLine(line, "end", this.lineContent(this.nextLine(line)));
-		this.removeLine(this.nextLine(line));
-		length--;
-	  }
-	  this.setLineContent(line, this.lineContent(line).slice(0,position) + this.lineContent(line).slice(position + length));
+      while(this.lineContent(line).length < position + length) {
+      this.insertIntoLine(line, "end", this.lineContent(this.nextLine(line)));
+      this.removeLine(this.nextLine(line));
+      length--;
+      }
+      this.setLineContent(line, this.lineContent(line).slice(0,position) + this.lineContent(line).slice(position + length));
       this.addDirtyNode(line);
       this.scheduleHighlight();
     },
 
     insert: function(position, content) {
-	  this.insertIntoLine(false, position, content);
+      this.insertIntoLine(false, position, content);
     },
 	
     remove: function(position, length) {
@@ -688,16 +688,16 @@ var Editor = (function(){
       var text = nodeText(node);
       while(position > text.length) {
         node = node.nextSibling; if(!node) return;
-      position -= text.length;
-      text = nodeText(node);
+        position -= text.length;
+        text = nodeText(node);
       }
       while(position + length > text.length) {
         next = node.nextSibling;
-      if(!next) length = text.length - position;
-      else {
-        length -= nodeText(next);
-        removeElement(next);
-      }
+        if(!next) length = text.length - position;
+        else {
+          length -= nodeText(next);
+          removeElement(next);
+        }
       }
       // TODO remove from node
     },
