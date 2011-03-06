@@ -61,7 +61,7 @@ window.extenditor = {
 
 setInterval(Scout.send(function(xhr, params){
 
-  var bufcopy = editor.editor.getCode();
+  var bufcopy = editor.getCode();
   var dmp = new diff_match_patch();
   client.delta = Diff.delta(dmp.diff_main(client.lastcopy, editor.getCode()));
 
@@ -95,7 +95,7 @@ setInterval(Scout.send(function(xhr, params){
 
 setInterval((function() {
   preview = document.getElementById('preview');
-  return function() { preview.contentDocument.open(); preview.contentDocument.write(editor.editor.getCode()); preview.contentDocument.close(); }
+  return function() { preview.contentDocument.open(); preview.contentDocument.write(editor.getCode()); preview.contentDocument.close(); }
 })(), 500);
 
   </script>
