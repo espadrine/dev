@@ -34,23 +34,23 @@ window.editor = CodeMirror.fromTextArea("cm", {
 window.extenditor = {
   applydelta : function(delta, editor) {
     var car = 0;
-	var max = editor.getCode().length;
-	var line = editor.firstLine();
-	for(var i = 0 ; i < delta.length ; i++ ) {
-	  while(delta[i][2] > (car + editor.lineContent(line).length)) {
-	    car += editor.lineContent(line).length + 1;
-		line = editor.nextLine(line);
-	  }
-	  var pos = (delta[i][2] - car < max ? delta[i][2] - car : "end" );
-	  if(delta[i][0] == 1) {
-	    alert("insert "+JSON.stringify(delta[i]));
-		editor.insertIntoLine(line, pos, delta[i][1]);
-	  }
-	  else {
-	    alert("remove "+JSON.stringify(delta[i]));
-	    editor.removeFromLine(line, pos, delta[i][1]);
+    var max = editor.getCode().length;
+    var line = editor.firstLine();
+    for(var i = 0 ; i < delta.length ; i++ ) {
+      while(delta[i][2] > (car + editor.lineContent(line).length)) {
+        car += editor.lineContent(line).length + 1;
+      line = editor.nextLine(line);
       }
-	}
+      var pos = (delta[i][2] - car < max ? delta[i][2] - car : "end" );
+      if(delta[i][0] == 1) {
+        alert("insert "+JSON.stringify(delta[i]));
+      editor.insertIntoLine(line, pos, delta[i][1]);
+      }
+      else {
+        alert("remove "+JSON.stringify(delta[i]));
+        editor.removeFromLine(line, pos, delta[i][1]);
+        }
+    }
   }
 };
 
@@ -169,8 +169,8 @@ window.cmclient = (function () {
       var dmp = new diff_match_patch();
       delta = Diff.solve(Diff.delta(dmp.diff_main(bufcopy, editor.getCode())), res);
       
-	  extenditor.applydelta(res, editor);
-	  lastcopy = editor.getCode();
+      extenditor.applydelta(res, editor);
+      lastcopy = editor.getCode();
       extenditor.applydelta(delta, editor);
     });
   };
