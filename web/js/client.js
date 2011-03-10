@@ -31,11 +31,9 @@ window.extenditor = {
       }
       var pos = (delta[i][2] - car < max ? delta[i][2] - car : "end" );
       if(delta[i][0] == 1) {
-        //alert("insert "+JSON.stringify(delta[i]));
         editor.insertIntoLine(line, pos, delta[i][1]);
       }
       else {
-        //alert("remove "+JSON.stringify(delta[i]));
         editor.removeFromLine(line, pos, delta[i][1]);
       }
     }
@@ -54,14 +52,22 @@ setInterval(Scout.send(function(xhr, params){
     delta: client.delta
   };
   
+  // DEBUG
+  console.log('sending rev : '+params.data.rev+', delta : '+JSON.stringify(params.data.delta));
+  
   params.error = function(xhr, status) {
     // TODO
   };
   
   params.open.url = '/_/change';
   
+  
   params.resp = function(xhr, resp) {
 	
+    // DEBUG
+    console.log('recieved rev : '+resp.rev+', delta : '+JSON.stringify(resp.delta));
+    
+    
     client.rev = resp.rev;
     client.delta = [];
     
@@ -71,8 +77,12 @@ setInterval(Scout.send(function(xhr, params){
     extenditor.applydelta(resp.delta, editor);
     client.lastcopy = editor.getCode();
     extenditor.applydelta(client.delta, editor);
+        
+    // DEBUG
+    console.log('sending rev : '+params.data.rev+', delta : '+JSON.stringify(params.data.delta));
 	
   };
+  
   
 }), client.timeout);
 
@@ -80,3 +90,4 @@ setInterval((function() {
   preview = document.getElementById('preview');
   return function() { preview.contentDocument.open(); preview.contentDocument.write(editor.getCode()); preview.contentDocument.close(); }
 })(), 500);
+
