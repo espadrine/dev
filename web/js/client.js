@@ -77,9 +77,6 @@ setInterval(Scout.send(function(xhr, params){
     extenditor.applydelta(resp.delta, editor);
     client.lastcopy = editor.getCode();
     extenditor.applydelta(client.delta, editor);
-        
-    // DEBUG
-    console.log('sending rev : '+params.data.rev+', delta : '+JSON.stringify(params.data.delta));
 	
   };
   
