@@ -1,4 +1,4 @@
-/* camp.js: server-side Ajax handler for node.js.
+/* camp.js: server-side Ajax handler that wraps around node.js.
  * Copyright (c) 2011 Thaddee Tyl. All rights reserved.
  */
 
