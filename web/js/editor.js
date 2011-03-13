@@ -668,27 +668,38 @@ var Editor = (function(){
       this.scheduleHighlight();
     },
 
-    removeFromLine: function(line, position, span) {
-      var before = null;
-      if (position == "end") {
-        before = endOfLine(line, this.container);
+    removeFromLine: function(line, position, length) {
+      while(this.lineContent(line).length < position + length) {
+      this.insertIntoLine(line, "end", this.lineContent(this.nextLine(line)));
+      this.removeLine(this.nextLine(line));
+      length--;
       }
-      else {
-	    while(this.lineContent(line).length < position + span) {
-		  this.insertIntoLine(line, "end", this.lineContent(this.nextLine(line)));
-		  this.removeLine(this.nextLine(line));
-		  span--;
-		}
-		this.setLineContent(line, this.lineContent(line).slice(0,position) + this.lineContent(line).slice(position + span));
-      }
-
-      var lines = asEditorLines(content);
-      for (var i = 0; i < lines.length; i++) {
-        if (i > 0) this.container.insertBefore(document.createElement("BR"), before);
-        this.container.insertBefore(makePartSpan(lines[i]), before);
-      }
+      this.setLineContent(line, this.lineContent(line).slice(0,position) + this.lineContent(line).slice(position + length));
       this.addDirtyNode(line);
       this.scheduleHighlight();
+    },
+
+    insert: function(position, content) {
+      this.insertIntoLine(false, position, content);
+    },
+	
+    remove: function(position, length) {
+      var node = this.container.firstChild; if(!node) return;
+      var text = nodeText(node);
+      while(position > text.length) {
+        node = node.nextSibling; if(!node) return;
+        position -= text.length;
+        text = nodeText(node);
+      }
+      while(position + length > text.length) {
+        next = node.nextSibling;
+        if(!next) length = text.length - position;
+        else {
+          length -= nodeText(next);
+          removeElement(next);
+        }
+      }
+      // TODO remove from node
     },
 
     // Retrieve the selected text.
