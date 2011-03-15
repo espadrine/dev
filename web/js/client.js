@@ -41,53 +41,49 @@ window.extenditor = {
   }
 };
 
-setInterval(function(){
+setInterval(Scout.send(function(xhr, params){
 
-  if(!waiting){
+  if(!client.waiting){
 
-    waiting = true;
-    Scout.send(function(xhr, params){
+    client.waiting = true;
+    var bufcopy = editor.getCode();
+    var dmp = new diff_match_patch();
+    client.delta = Diff.delta(dmp.diff_main(client.lastcopy, editor.getCode()));
+
+    params.data = {
+      usr: client.usr,
+      rev: client.rev,
+      delta: client.delta
+    };
     
-      var bufcopy = editor.getCode();
-      var dmp = new diff_match_patch();
-      client.delta = Diff.delta(dmp.diff_main(client.lastcopy, editor.getCode()));
-
-      params.data = {
-        usr: client.usr,
-        rev: client.rev,
-        delta: client.delta
-      };
-      
+    // DEBUG
+    console.log('sending rev : '+params.data.rev+', delta : '+JSON.stringify(params.data.delta));
+    
+    params.error = function(xhr, status) {
+      // TODO
+    };
+    
+    params.open.url = '/_/change';
+    
+    params.resp = function(xhr, resp) {
       // DEBUG
-      console.log('sending rev : '+params.data.rev+', delta : '+JSON.stringify(params.data.delta));
+      console.log('recieved rev : '+resp.rev+', delta : '+JSON.stringify(resp.delta));
       
-      params.error = function(xhr, status) {
-        // TODO
-      };
+      client.rev = resp.rev;
+      client.delta = [];
       
-      params.open.url = '/_/change';
-      
-      params.resp = function(xhr, resp) {
-        // DEBUG
-        console.log('recieved rev : '+resp.rev+', delta : '+JSON.stringify(resp.delta));
+      if (resp.delta.length != 0) {
+        var dmp = new diff_match_patch();
+        client.delta = Diff.solve(Diff.delta(dmp.diff_main(bufcopy, editor.getCode())), resp.delta);
         
-        client.rev = resp.rev;
-        client.delta = [];
-        
-        if (resp.delta.length != 0) {
-          var dmp = new diff_match_patch();
-          client.delta = Diff.solve(Diff.delta(dmp.diff_main(bufcopy, editor.getCode())), resp.delta);
-          
-          extenditor.applydelta(resp.delta, editor);
-          Diff.applydelta(resp.delta, client.lastcopy);
-          extenditor.applydelta(client.delta, editor);
-        }
-        
-        client.waiting = false;
+        extenditor.applydelta(resp.delta, editor);
+        Diff.applydelta(resp.delta, client.lastcopy);
+        extenditor.applydelta(client.delta, editor);
+      }
       
-      };
-      
-    }
+      client.waiting = false;
+    
+    };
   }
 }), client.timeout);
 
