@@ -7,6 +7,7 @@ window.client = {
   rev: 0,
   lastcopy: "<!doctype html>\n<title><\/title>\n\n<body>\n  <canvas id=tutorial width=150 height=150><\/canvas>\n\n  <script>\n    var canvas = document.getElementById('tutorial');\n    var context = canvas.getContext('2d');\n\n    context.fillStyle = 'rgb(250,0,0)';\n    context.fillRect(10, 10, 55, 50);\n\n    context.fillStyle = 'rgba(0, 0, 250, 0.5)';\n    context.fillRect(30, 30, 55, 50);\n  <\/script>\n<\/body>",
   delta: [],
+  waiting: false,
   timeout: 3000 // DEBUG
 };
 
@@ -40,50 +41,54 @@ window.extenditor = {
   }
 };
 
-setInterval(Scout.send(function(xhr, params){
+setInterval(function(){
 
-  var bufcopy = editor.getCode();
-  var dmp = new diff_match_patch();
-  client.delta = Diff.delta(dmp.diff_main(client.lastcopy, editor.getCode()));
+  if(!waiting){
 
-  params.data = {
-    usr: client.usr,
-    rev: client.rev,
-    delta: client.delta
-  };
-  
-  // DEBUG
-  console.log('sending rev : '+params.data.rev+', delta : '+JSON.stringify(params.data.delta));
-  
-  params.error = function(xhr, status) {
-    // TODO
-  };
-  
-  //params.open.url = '/_/change';
-  
-  
-  params.resp = function(xhr, resp) {
-	
-    // DEBUG
-    console.log('recieved rev : '+resp.rev+', delta : '+JSON.stringify(resp.delta));
+    waiting = true;
+    Scout.send(function(xhr, params){
     
-    
-    client.rev = resp.rev;
-    client.delta = [];
-    
-    
-    if (resp.delta.length != 0) {
+      var bufcopy = editor.getCode();
       var dmp = new diff_match_patch();
-      client.delta = Diff.solve(Diff.delta(dmp.diff_main(bufcopy, editor.getCode())), resp.delta);
+      client.delta = Diff.delta(dmp.diff_main(client.lastcopy, editor.getCode()));
+
+      params.data = {
+        usr: client.usr,
+        rev: client.rev,
+        delta: client.delta
+      };
       
-      extenditor.applydelta(resp.delta, editor);
-      Diff.applydelta(resp.delta, client.lastcopy);
-      extenditor.applydelta(client.delta, editor);
+      // DEBUG
+      console.log('sending rev : '+params.data.rev+', delta : '+JSON.stringify(params.data.delta));
+      
+      params.error = function(xhr, status) {
+        // TODO
+      };
+      
+      params.open.url = '/_/change';
+      
+      params.resp = function(xhr, resp) {
+        // DEBUG
+        console.log('recieved rev : '+resp.rev+', delta : '+JSON.stringify(resp.delta));
+        
+        client.rev = resp.rev;
+        client.delta = [];
+        
+        if (resp.delta.length != 0) {
+          var dmp = new diff_match_patch();
+          client.delta = Diff.solve(Diff.delta(dmp.diff_main(bufcopy, editor.getCode())), resp.delta);
+          
+          extenditor.applydelta(resp.delta, editor);
+          Diff.applydelta(resp.delta, client.lastcopy);
+          extenditor.applydelta(client.delta, editor);
+        }
+        
+        client.waiting = false;
+      
+      };
+      
     }
-	
-  };
-  
-  
+  }
 }), client.timeout);
 
 setInterval((function() {
