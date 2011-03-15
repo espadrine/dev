@@ -1,5 +1,3 @@
-
-
 exports.Camp = (function () {
   var camp = function (action, callback) {
   	exports.Camp.Actions[action] = callback;
