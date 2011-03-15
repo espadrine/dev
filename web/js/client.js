@@ -67,7 +67,7 @@ setInterval(Scout.send(function(xhr, params){
     
     params.resp = function(xhr, resp) {
       // DEBUG
-      console.log('recieved rev : '+resp.rev+', delta : '+JSON.stringify(resp.delta));
+      console.log('received rev : '+resp.rev+', delta : '+JSON.stringify(resp.delta));
       
       client.rev = resp.rev;
       client.delta = [];
@@ -78,6 +78,7 @@ setInterval(Scout.send(function(xhr, params){
         
         extenditor.applydelta(resp.delta, editor);
         Diff.applydelta(resp.delta, client.lastcopy);
+        alert(client.lastcopy);
         extenditor.applydelta(client.delta, editor);
       }
       
