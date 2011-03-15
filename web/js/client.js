@@ -68,14 +68,14 @@ setInterval(Scout.send(function(xhr, params){
     client.rev = resp.rev;
     client.delta = [];
     
-    if (resp.delta.length != 0) {
+    //if (resp.delta.length != 0) {
       var dmp = new diff_match_patch();
       client.delta = Diff.solve(Diff.delta(dmp.diff_main(bufcopy, editor.getCode())), resp.delta);
       
       extenditor.applydelta(resp.delta, editor);
       client.lastcopy = editor.getCode();
       extenditor.applydelta(client.delta, editor);
-    }
+    //}
   };
 }), client.timeout);
 
