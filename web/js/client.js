@@ -72,9 +72,9 @@ setInterval(Scout.send(function(xhr, params){
     var dmp = new diff_match_patch();
     client.delta = Diff.solve(Diff.delta(dmp.diff_main(bufcopy, editor.getCode())), resp.delta);
     
-    //extenditor.applydelta(resp.delta, editor);
+    extenditor.applydelta(resp.delta, editor);
     client.lastcopy = editor.getCode();
-    extenditor.applydelta(client.delta, editor);
+    //extenditor.applydelta(client.delta, editor);
   };
 }), client.timeout);
 
