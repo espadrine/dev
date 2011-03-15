@@ -65,53 +65,115 @@ var applydelta = function (delta, copy) {
  */
 var solve = function (delta, newdelta) {
 
-  for (var i = 0; i < newdelta.length; i++) {
+  var nd, dl;
+  var become = [];  // Couple of a list of deltas to integrate.
+  for (var i = 0; i < delta.length; i++) {
     /* Solve each new modification in order. */
-    var nd = newdelta[i];
-    for (var j = 0; j < delta.length; j++) {
-      nd = newdelta[i];
-      if (nd === undefined || delta[j] === undefined) {
-        break;
+    for (var j = 0; j < newdelta.length; j++) {
+      dl = delta[i];
+      nd = newdelta[j];
+      if (nd === undefined || dt === undefined) { break; }
+
+      /* What is each of those? */
+      /* 4 cases: ins/ins, ins/del, del/ins, del/del. */
+      if (nd[0] === 1 && dl[0] === 1) {
+        become = insins (nd, dl, [i, j]);
+      } else if (nd[0] === 1 && dl[0] === 0) {
+        become = insdel (nd, dl, [i, j]);
+      } else if (nd[0] === 0 && dl[0] === 1) {
+        become = insdel (dl, nd, [j, i]);
+      } else if (nd[0] === 0 && dl[0] === 0) {
+        become = deldel (nd, dl, [i, j]);
       }
-      switch (nd[0]) {
 
-        case 0:  /* Deletion. */
-          if (delta[j][2] > nd[2]) {
-            solveRightOfDel (delta, newdelta, [i, j]);
-          } else {
-            solveLeftOfDel (delta, newdelta, [i, j]);
-          }
-
-          break;
-
-        case 1:  /* Insertion. */
-          if (nd[2] <= delta[j][2]) {
-            delta[j][2] += nd[1].length;
-          } else {
-            /* We act on the left of the insertion. */
-            if (delta[j][0] === 0) {
-              if (delta[j][1] < nd[2] - delta[j][2]) {
-                nd[2] -= delta[j][1];
-              } else {
-                  /* They inserted something on a spot that was deleted. */
-                  delta[j][1] += nd[1].length;  /* We delete it all first. */
-                  nd[2] = delta[j][2];/* Then we insert at the first position.*/
-                  j++;
-                  delta.splice (j, 0, nd);
-              }
-            } else {
-              /* They inserted something on a spot that was an insertion. */
-              nd[2] += delta[j][1].length;
-            }
-          }
-          break;
-
-      }
+      /* Update. */
+      integrate (delta, become[0], i);
+      integrate (newdelta, become[1], j);
     }
   }
 
   return delta;
 
+};
+
+var integrate = function (delta, become, i) {
+  // become is a list of deltas to integrate, eg, [[1,'hello',4]].
+  var b = become.slice (0);  // Make a copy
+  delta.splice (i, 1);
+  while (b.length > 0) {
+    delta.splice (i, 0, b.pop ());
+  }
+};
+
+/* Two insertions happened simultaneously. */
+var insins = function (insa, insb, ij) {
+  var become = [[insa], [insb]];
+
+  if (insa[2] < insb[2]) {
+    /* Happens before... */
+    insb[2] += insa[1].length;
+  } else {
+    insa[2] += insb[1].length;
+  }
+
+  return become;
+};
+
+/* An insertion, a deletion. */
+var insdel = function (ins, del, ij) {
+  var become = [[ins], [del]];
+
+  if (ins[2] <= del[2]) {
+    /* Insertion on the left. */
+    var toenddel = del[1] - (ins[2] + ins[1].length - del[2]);
+    if (toenddel < 0) { toenddel = 0; }
+    del[2] -= ins[1].length;  // First del occurs before insertion.
+    del[1] -= toenddel;  // It ends where insertion ends.
+    var seconddel = [0, toenddel, del[2] + del[1] + ins[1].length];
+    become[1].push (seconddel);  // Another deletion happens after ins.
+
+    ins[2] -= del[1];  // The insertion is shifted by the deletion before.
+
+  } else {
+    /* Deletion on the left. */
+    var toenddel = del[2] - ins[2];
+    if (toenddel < 0) { toenddel = 0; }
+    del[1] -= toenddel;  // Deletion is cut in half by insertion.
+    var seconddel = [0, toenddel, del[2] + del[1] + ins[1].length];
+    become[1].push (seconddel);  // Next half of the deletion.
+
+    ins[2] -= del[1];  // Insertion before the deletion.
+  }
+
+  return become;
+};
+
+/* Two deletions. */
+var deldel = function (dela, delb, ij) {
+  var become = [[dela], [delb]];
+
+  var del1 = dela[2] < delb[2]? dela: delb;  // First deletion to occur.
+  var del2 = dela[2] < delb[2]? delb: dela;  // Second deletion to occur.
+
+  //  --------   End of first del - Start of second del.
+  var toenddel = (del1[2] + del1[1]) - del2[2];
+
+  if (toenddel < 0) {
+    /* Non-overlapping deletions. */
+
+    become[0].push (delb);
+    become[1].push (dela);
+
+  } else {
+    /* Overlapping deletions. */
+
+    del1[1] += del2[1] - toenddel;
+    del2[2] -= del2[2] - del1[2];
+    del2[1] -= toenddel;
+
+  }
+
+  return become;
 };
 
 /* solveRightOfDel (delta, newdelta, ij):

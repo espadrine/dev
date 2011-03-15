@@ -1727,29 +1727,32 @@ Scout = (function () {
     
   var sendxhr = function (target, params) {
     /* XHR stuff now. */
-    xhr.onreadystatechange = function () {
-      if (xhr.readyState === 4) {
-        if (xhr.status === 200) {
-          var resp = JSON.parse(xhr.responseText);
-          params.resp.apply(target, [xhr, resp]);
-        } else {
-          params.error.apply(target, [xhr, xhr.status]);
+    if (xhr.open.url) {
+      /* We have somewhere to go to. */
+      xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4) {
+          if (xhr.status === 200) {
+            var resp = JSON.parse(xhr.responseText);
+            params.resp.apply(target, [xhr, resp]);
+          } else {
+            params.error.apply(target, [xhr, xhr.status]);
+          }
         }
+      };
+      xhr.open(params.open.method,
+               params.open.url + (params.open.method === 'POST'? '':
+                                  '?' + toxhrsend(params.data)),
+               true,
+               params.open.user,
+               params.open.password);
+      
+      if (params.open.method === 'POST') {
+        xhr.setRequestHeader('Content-Type',
+                             'application/x-www-form-urlencoded');
+        xhr.send(toxhrsend(params.data));
+      } else {
+        xhr.send(null);
       }
-    };
-    xhr.open(params.open.method,
-             params.open.url + (params.open.method === 'POST'? '':
-                                '?' + toxhrsend(params.data)),
-             true,
-             params.open.user,
-             params.open.password);
-    
-    if (params.open.method === 'POST') {
-      xhr.setRequestHeader('Content-Type',
-                           'application/x-www-form-urlencoded');
-      xhr.send(toxhrsend(params.data));
-    } else {
-      xhr.send(null);
     }
   };
 
