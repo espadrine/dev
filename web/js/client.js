@@ -33,6 +33,7 @@ window.extenditor = {
       var pos = (delta[i][2] - car < max ? delta[i][2] - car : "end" );
       if(delta[i][0] == 1) {
         editor.insertIntoLine(line, pos, delta[i][1]);
+        console.log('BAM');
       }
       else {
         editor.removeFromLine(line, pos, delta[i][1]);
@@ -68,14 +69,12 @@ setInterval(Scout.send(function(xhr, params){
     client.rev = resp.rev;
     client.delta = [];
     
-    //if (resp.delta.length != 0) {
-      var dmp = new diff_match_patch();
-      client.delta = Diff.solve(Diff.delta(dmp.diff_main(bufcopy, editor.getCode())), resp.delta);
-      
-      extenditor.applydelta(resp.delta, editor);
-      client.lastcopy = editor.getCode();
-      extenditor.applydelta(client.delta, editor);
-    //}
+    var dmp = new diff_match_patch();
+    client.delta = Diff.solve(Diff.delta(dmp.diff_main(bufcopy, editor.getCode())), resp.delta);
+    
+    extenditor.applydelta(resp.delta, editor);
+    client.lastcopy = editor.getCode();
+    extenditor.applydelta(client.delta, editor);
   };
 }), client.timeout);
 
