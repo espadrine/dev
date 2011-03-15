@@ -42,49 +42,41 @@ window.extenditor = {
 };
 
 setInterval(Scout.send(function(xhr, params){
+  var bufcopy = editor.getCode();
+  var dmp = new diff_match_patch();
+  client.delta = Diff.delta(dmp.diff_main(client.lastcopy, editor.getCode()));
 
-  if(!client.waiting){
-
-    client.waiting = true;
-    var bufcopy = editor.getCode();
-    var dmp = new diff_match_patch();
-    client.delta = Diff.delta(dmp.diff_main(client.lastcopy, editor.getCode()));
-
-    params.data = {
-      usr: client.usr,
-      rev: client.rev,
-      delta: client.delta
-    };
-    
+  params.data = {
+    usr: client.usr,
+    rev: client.rev,
+    delta: client.delta
+  };
+  
+  // DEBUG
+  console.log('sending rev : '+params.data.rev+', delta : '+JSON.stringify(params.data.delta));
+  
+  params.error = function(xhr, status) {
+    // TODO
+  };
+  
+  params.open.url = '/_/change';
+  
+  params.resp = function(xhr, resp) {
     // DEBUG
-    console.log('sending rev : '+params.data.rev+', delta : '+JSON.stringify(params.data.delta));
+    console.log('received rev : '+resp.rev+', delta : '+JSON.stringify(resp.delta));
     
-    params.error = function(xhr, status) {
-      // TODO
-    };
+    client.rev = resp.rev;
+    client.delta = [];
     
-    params.open.url = '/_/change';
-    
-    params.resp = function(xhr, resp) {
-      // DEBUG
-      console.log('received rev : '+resp.rev+', delta : '+JSON.stringify(resp.delta));
+    if (resp.delta.length != 0) {
+      var dmp = new diff_match_patch();
+      client.delta = Diff.solve(Diff.delta(dmp.diff_main(bufcopy, editor.getCode())), resp.delta);
       
-      client.rev = resp.rev;
-      client.delta = [];
-      
-      if (resp.delta.length != 0) {
-        var dmp = new diff_match_patch();
-        client.delta = Diff.solve(Diff.delta(dmp.diff_main(bufcopy, editor.getCode())), resp.delta);
-        
-        extenditor.applydelta(resp.delta, editor);
-        client.lastcopy = editor.getCode();
-        extenditor.applydelta(client.delta, editor);
-      }
-      
-      client.waiting = false;
-    
-    };
-  }
+      extenditor.applydelta(resp.delta, editor);
+      client.lastcopy = editor.getCode();
+      extenditor.applydelta(client.delta, editor);
+    }
+  };
 }), client.timeout);
 
 setInterval((function() {
