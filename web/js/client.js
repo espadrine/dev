@@ -33,7 +33,7 @@ window.extenditor = {
       var pos = (delta[i][2] - car < max ? delta[i][2] - car : "end" );
       if(delta[i][0] == 1) {
         editor.insertIntoLine(line, pos, delta[i][1]);
-        console.log('BAM');
+        console.log('BAM! '+JSON.stringify(delta));
       }
       else {
         editor.removeFromLine(line, pos, delta[i][1]);
