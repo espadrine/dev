@@ -59,7 +59,7 @@ setInterval(Scout.send(function(xhr, params){
     // TODO
   };
   
-  params.open.url = '/_/change';
+  //params.open.url = '/_/change';
   
   
   params.resp = function(xhr, resp) {
@@ -71,12 +71,15 @@ setInterval(Scout.send(function(xhr, params){
     client.rev = resp.rev;
     client.delta = [];
     
-    var dmp = new diff_match_patch();
-    client.delta = Diff.solve(Diff.delta(dmp.diff_main(bufcopy, editor.getCode())), resp.delta);
     
-    extenditor.applydelta(resp.delta, editor);
-    client.lastcopy = editor.getCode();
-    extenditor.applydelta(client.delta, editor);
+    if (resp.delta.length != 0) {
+      var dmp = new diff_match_patch();
+      client.delta = Diff.solve(Diff.delta(dmp.diff_main(bufcopy, editor.getCode())), resp.delta);
+      
+      extenditor.applydelta(resp.delta, editor);
+      Diff.applydelta(resp.delta, client.lastcopy);
+      extenditor.applydelta(client.delta, editor);
+    }
 	
   };
   
