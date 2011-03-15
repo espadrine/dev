@@ -1,3 +1,7 @@
+/* camp.js: server-side Ajax handler that wraps around node.js.
+ * Copyright (c) 2011 Thaddee Tyl. All rights reserved.
+ */
+
 exports.Camp = (function () {
   var camp = function (action, callback) {
   	exports.Camp.Actions[action] = callback;
@@ -7,7 +11,7 @@ exports.Camp = (function () {
   return camp;
 })();
 
-exports.Camp.start = function (port) {
+exports.Camp.start = function (port, debug) {
   port = port || 80;
   
   var http = require('http'),
@@ -56,7 +60,7 @@ exports.Camp.start = function (port) {
         });
       
       } else	{
-        console.log(path);
+        if (debug) { console.log(path); }
         var src = fs.readFileSync(realpath).toString();	    	
         res.writeHead(200, {'Content-Type': 'text/html'});
         res.write(src);
@@ -67,11 +71,9 @@ exports.Camp.start = function (port) {
     catch(e) {
       res.writeHead(404);
       res.write('404: thou hast finished me!\n');
-      res.write(e.toString());
+      if (debug) { res.write(e.toString()); }
       res.end();
     }
   
   }).listen(port);
 };
-
-
