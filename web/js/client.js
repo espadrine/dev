@@ -77,8 +77,7 @@ setInterval(Scout.send(function(xhr, params){
         client.delta = Diff.solve(Diff.delta(dmp.diff_main(bufcopy, editor.getCode())), resp.delta);
         
         extenditor.applydelta(resp.delta, editor);
-        Diff.applydelta(resp.delta, client.lastcopy);
-        alert(client.lastcopy);
+        client.lastcopy = editor.getCode();
         extenditor.applydelta(client.delta, editor);
       }
       
