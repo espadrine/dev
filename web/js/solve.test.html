@@ -1,0 +1,147 @@
+<!doctype html>
+<meta charset=utf-8>
+<title>Testing Diff.solve</title>
+<style>
+  html { font-family: sans-serif; font-size: 15pt; }
+</style>
+
+<script src=diff2.js></script>
+
+<script>
+addEventListener('load', function(){
+
+
+  /* OUTPUT */
+
+  var ol = document.createElement('ol');    // Each test is printed out as a li.
+  document.body.appendChild(ol);
+
+  var inc = 1;
+
+  var equal = function (li1, li2) {
+    var len = li1.length;
+    if (li2.length !== len) {   // Lists must have the same length.
+      return false;
+    }
+
+    for (var i = 0; i < len; i++) {
+      var i1 = li1[i], i2 = li2[i];
+      if (typeof i1 === 'object') {
+        if (!!i1.length) {        // The item is a list.
+          if (!equal(i1, i2)) {
+            return false;
+          }
+        } else {
+          // TODO -- could be an object...
+        }
+      } else {
+        if (i1 !== i2) {
+          return false;
+        }
+      }
+    }
+    return true;
+  };
+
+  var test = function (test, reference, error_message) {
+    var li = document.createElement('li');  // Create the li.
+    if (!equal(test, reference)) {
+      li.innerHTML = error_message;         // Insert the error message.
+      li.innerHTML += '<br>Wanted: ' + JSON.stringify(reference) +
+                      '; Got: ' + JSON.stringify(test);
+      inc++;
+    } else {
+      li.innerHTML = 'Test number ' + inc++ + ' successful.';
+    }
+    ol.appendChild(li);                     // Show the list item.
+  };
+
+
+
+  /* TESTS */
+
+  var tests = [];
+  var refs = [];
+
+  var push = function (d1, d2, ref1, ref2, error) {
+    refs.push([d1,d2,ref1,ref2,error]);
+  };
+  // The following function for single-modification deltas only.
+  var pushatomic = function (d1, d2, ref1, ref2, error) {
+    push([d1],[d2],[ref1],[ref2],error);
+  };
+
+  var exectest = function (refs, tests) {
+    var d1, d2, ref1, ref2, errmsg;
+    for (var i = 0; i < refs.length; i++) {
+
+      d1     = refs[i][0];
+      d2     = refs[i][1];
+      ref1   = refs[i][2];
+      ref2   = refs[i][3];
+      errmsg = refs[i][4];
+
+      Diff.solve(d1, d2);
+      tests.push([d1,d2]);
+
+      test([d1, d2], [ref1, ref2], errmsg);
+    }
+  };
+
+
+  // insert / insert
+
+  pushatomic(
+    [1,'a',0], [1,'b',1],
+    [1,'a',0], [1,'b',2],
+    "Insertion doesn't shift the second insertion."
+  );
+
+  pushatomic(
+    [1,'a',1], [1,'b',0],
+    [1,'a',2], [1,'b',0],
+    "Simultaneous insertion solver is not symmetrical."
+  );
+
+  // insert / delete
+
+  pushatomic(
+    [1,'a',0], [0,1,5],
+    [1,'a',0], [0,1,6],
+    "Deletion after an insertion does not shift the deletion start point."
+  );
+
+  pushatomic(
+    [1,'a',5], [0,1,0],
+    [1,'a',4], [0,1,0],
+    "Insertion after a deletion does not shift the insertion start point."
+  );
+
+  push(
+    [[1,'a',5]], [[0,10,0]],
+    [[1,'a',0]], [[0,4,0],[0,6,6]],
+    "Insertion in the middle of a deletion."
+  );
+
+  // nothing at all.
+
+  pushatomic(
+    [], [],
+    [], [],
+    ""
+  );
+
+  push(
+    [], [],
+    [], [],
+    ""
+  );
+
+
+
+  // Run the tests.
+
+  exectest(refs, tests);
+
+}, false);
+</script>
