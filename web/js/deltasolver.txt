@@ -15,8 +15,8 @@ When is there a conflict?
 Each combination of modification may cause a conflict in certain circumstances.
 We will here pinpoint where.
   Simultaneous insertions always cause a conflict, which is easy to resolve.
-Indeed, the insertion that happens at an index higher than the other needs to
-take the other insertion into account, and shift its own index by the amount of
+Indeed, the insertion that happens at a higher index needs to take the other
+insertion into account, and to shift its own index by the amount of
 characters added.
   When a deletion happens at the same time as an insertion, the conflict happens
 in a different way with respect to the modification that occurs earlier. If the

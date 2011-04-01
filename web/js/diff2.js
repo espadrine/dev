@@ -64,7 +64,7 @@ var applydelta = function (delta, copy) {
  * Note: this code is non-trivial. Please tread carefully when browsing through.
  */
 var solve = function (delta1, delta2) {
-  var newdelta1 = [], newdelta2 = [];
+  //var newdelta1 = [], newdelta2 = [];
 
   var nd, dl;
   var become = [];  // Couple of a list of delta11 to integrate.
@@ -88,12 +88,12 @@ var solve = function (delta1, delta2) {
       }
 
       /* Update. */
-      newdelta1.concat (become[0]);
-      newdelta2.concat (become[1]);
       /*
+      newdelta1 = newdelta1.concat (become[0]);
+      newdelta1 = newdelta2.concat (become[1]);
+      */
       integrate (delta1, become[0], [i]);
       integrate (delta2, become[1], [j]);
-      */
     }
   }
 
@@ -104,17 +104,10 @@ var solve = function (delta1, delta2) {
 
 // helper functions (read-only values)
 
-var modifstart = function (modif) {
-  return modif[2];
-};
-
-var modifspan = function (modif) {
-  return (modif[0] === 0? modif[1]: modif[1].length);
-};
-
 var integrate = function (delta, become, i) {
   // become is a list of deltas to integrate, eg, [[1,'hello',4]].
   // i is actually a singleton contaning i, to make it a reference.
+  if (!become) return;
   var b = become.slice (0);  // Make a copy
   delta.splice (i[0], 1);
   while (b.length > 0) {
@@ -122,6 +115,16 @@ var integrate = function (delta, become, i) {
   }
   i[0] += (become.length - 1);
 };
+
+/*
+var modifstart = function (modif) {
+  return modif[2];
+};
+
+var modifspan = function (modif) {
+  return (modif[0] === 0? modif[1]: modif[1].length);
+};
+*/
 
 /* Two insertions happened simultaneously. */
 var insins = function (insa, insb) {
@@ -145,33 +148,24 @@ var insdel = function (ins, del) {
     /* Insertion on the left. */
 
     del[2] += ins[1].length;
-    /*
-    var toenddel = del[1] - (ins[2] + ins[1].length - del[2]);
-    if (toenddel < 0) { toenddel = 0; }
-    del[2] -= ins[1].length;  // The del occurs before insertion.
-    del[1] -= toenddel;       // It ends where insertion ends.
-    var seconddel = [0, toenddel, del[2] + del[1] + ins[1].length];
-    become[1].push (seconddel);  // Another deletion happens after ins.
-
-    ins[2] -= del[1];  // The insertion is shifted by the deletion before.
-    */
 
   } else {
     /* Deletion on the left. */
 
-    // toenddel = endindex (del) - startindex (ins)
-    var toenddel = (del[2] + del[1]) - ins[2];
+    // toenddel = endindex (del) - startindex (ins) + 1
+    var toenddel = (del[2] + del[1]) - ins[2] + 1;
+    var spandel = del[1];
     if (toenddel >= 0) {
       // Deletion is cut in half by insertion.
       del[1] -= toenddel;
       var seconddel = [0, toenddel, del[2] + del[1] + ins[1].length];
       become[1].push (seconddel);  // Next half of the deletion.
     } else {
-      toenddel = 0;
+      toenddel = 1;
     }
 
     // remove span (del) - toenddel to startindex (ins)
-    ins[2] -= del[1] - toenddel;
+    ins[2] -= spandel - (toenddel - 1);
   }
 
   return become;
@@ -185,7 +179,7 @@ var deldel = function (dela, delb) {
   var del2 = dela[2] < delb[2]? delb: dela;  // Second deletion to occur.
 
   //  --------   End of first del - Start of second del.
-  var toenddel = (del1[2] + del1[1] - 1) - del2[2];
+  var toenddel = (del1[2] + del1[1]) - del2[2];
 
   if (toenddel > 0) {
     /* Overlapping deletions. */

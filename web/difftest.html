@@ -22,7 +22,7 @@
 </table>
 
 <script src=js/diff_match_patch.js></script>
-<script src=js/diff.js></script>
+<script src=js/diff2.js></script>
 
 <script>
 
@@ -39,6 +39,8 @@ window.server = (function () {
   /* Dom. */
 
   var para = document.getElementById('main');
+  var t0 = document.getElementById('t0'),
+      t1 = document.getElementById('t1');
 
   return function (theirrev, delta, callback) {
     /* Change in the copy. */
@@ -63,6 +65,18 @@ window.server = (function () {
         Diff.solve(senddelta, delta);
         console.log("after: delta " + JSON.stringify(delta) +
                     " senddelta " + JSON.stringify(senddelta));
+
+        if (Diff.applydelta(delta, copy) != Diff.applydelta(senddelta,
+                t0.value) &&
+            Diff.applydelta(delta, copy) != Diff.applydelta(senddelta,
+                t1.value)) {
+          console.log ("-- server will be " +
+            JSON.stringify(Diff.applydelta(delta, para.textContent)));
+          console.log ("-- #0 would be " +
+            JSON.stringify(Diff.applydelta(senddelta, t0.value)));
+          console.log ("-- #1 would be " +
+            JSON.stringify(Diff.applydelta(senddelta, t1.value)));
+        }
 
         callback(rev+1, senddelta);
 
@@ -136,9 +150,9 @@ var auto = function () {
     var num = Math.floor(Math.random()*2);
     switch(Math.floor(Math.random()*3)) {
     case 0: //push
-      alert(num);
       document.getElementById('t'+num+'but').click();
       if(lastcopy.textContent != area[num].value) { // found a bug
+        console.log("It is #" + num + "'s fault!");
         bug = true;
         area[num].style.backgroundColor = '#FF0000';
       }
