@@ -103,6 +103,18 @@ addEventListener('load', function(){
     "Simultaneous insertion solver is not symmetrical."
   );
 
+  push(
+    [[1,'a',0],[1,'b',1]], [[1,'c',2]],
+    [[1,'a',0],[1,'b',1]], [[1,'c',4]],
+    "Multiple insertion combined with simultaneous insertion."
+  );
+
+  push(
+    [[1,'a',0]], [[1,'c',2],[1,'b',1]],
+    [[1,'a',0]], [[1,'c',3],[1,'b',2]],
+    "Multiple insertion combined with simultaneous insertion."
+  );
+
   // insert / delete
 
   pushatomic(
@@ -121,6 +133,41 @@ addEventListener('load', function(){
     [[1,'a',5]], [[0,10,0]],
     [[1,'a',0]], [[0,4,0],[0,6,6]],
     "Insertion in the middle of a deletion."
+  );
+
+  // delete / delete
+
+  pushatomic(
+    [0,3,0], [0,3,4],
+    [0,3,0], [0,3,1],
+    "Simultaneous deletion, no overlapping. The second deletion must shift."
+  );
+
+  pushatomic(
+    [0,3,0], [0,3,3],
+    [0,3,0], [0,3,0],
+    "Simultaneous deletion, no overlapping. Edge case."
+  );
+
+  pushatomic(
+    [0,6,0], [0,6,3],
+    [0,3,0], [0,3,0],
+    "Simultaneous deletion with overlapping."
+  );
+
+  pushatomic(
+    [0,6,3], [0,6,0],
+    [0,3,0], [0,3,0],
+    "Simultaneous deletion with overlapping, the other way around."
+  );
+
+
+  // Multiple deletions / insertion
+
+  push(
+    [[0,6,0],[0,6,3]], [[1,'a',9]],
+    [[0,6,0],[0,6,3]], [[1,'a',0]],
+    "Multiple deletions, one insertion."
   );
 
   // nothing at all.
