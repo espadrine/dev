@@ -7,6 +7,7 @@ window.client = {
   rev: 0,
   lastcopy: "<!doctype html>\n<title><\/title>\n\n<body>\n  <canvas id=tutorial width=150 height=150><\/canvas>\n\n  <script>\n    var canvas = document.getElementById('tutorial');\n    var context = canvas.getContext('2d');\n\n    context.fillStyle = 'rgb(250,0,0)';\n    context.fillRect(10, 10, 55, 50);\n\n    context.fillStyle = 'rgba(0, 0, 250, 0.5)';\n    context.fillRect(30, 30, 55, 50);\n  <\/script>\n<\/body>",
   delta: [],
+  waiting: false,
   timeout: 3000 // DEBUG
 };
 
@@ -32,6 +33,7 @@ window.extenditor = {
       var pos = (delta[i][2] - car < max ? delta[i][2] - car : "end" );
       if(delta[i][0] == 1) {
         editor.insertIntoLine(line, pos, delta[i][1]);
+        console.log('BAM! '+JSON.stringify(delta));
       }
       else {
         editor.removeFromLine(line, pos, delta[i][1]);
@@ -41,7 +43,6 @@ window.extenditor = {
 };
 
 setInterval(Scout.send(function(xhr, params){
-
   var bufcopy = editor.getCode();
   var dmp = new diff_match_patch();
   client.delta = Diff.delta(dmp.diff_main(client.lastcopy, editor.getCode()));
@@ -61,12 +62,9 @@ setInterval(Scout.send(function(xhr, params){
   
   params.open.url = '/_/change';
   
-  
   params.resp = function(xhr, resp) {
-	
     // DEBUG
-    console.log('recieved rev : '+resp.rev+', delta : '+JSON.stringify(resp.delta));
-    
+    console.log('received rev : '+resp.rev+', delta : '+JSON.stringify(resp.delta));
     
     client.rev = resp.rev;
     client.delta = [];
@@ -77,10 +75,7 @@ setInterval(Scout.send(function(xhr, params){
     extenditor.applydelta(resp.delta, editor);
     client.lastcopy = editor.getCode();
     extenditor.applydelta(client.delta, editor);
-	
   };
-  
-  
 }), client.timeout);
 
 setInterval((function() {
