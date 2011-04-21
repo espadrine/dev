@@ -1,7 +1,10 @@
 /* client.js: manages the client-side of the collaborative editor
+ * Copyright (c) 2011 Thaddee Tyl. All rights reserved.
  * Copyright (c) 2011 Jan Keromnes. All rights reserved.
  * */
  
+(function () {
+
 
 // Information we keep on the state of the content of the editor.
 window.client = {
@@ -49,7 +52,7 @@ window.extenditor = {
 // -- HERE BE AJAX SPACE.
 
 
-// This place is specifically designed to receive information from the server.
+//1. This place is specifically designed to receive information from the server.
 
 // Whenever we load the page, we shall send nothing to
 // the "in" action of the server.
@@ -83,13 +86,19 @@ function getmodif (xhr, params) {
   };
 
 }
+
+// Let's begin the connection when the page loads.
 Scout ('body').on ('load', getmdofif);
 
 
 
+//2. This place is specifically designed to send information to the server.
 
-// FIXME We need to remove this block.
-setInterval(Scout.send(function(xhr, params){
+
+if (!window.CodeMirrorConfig)  { window.CodeMirrorConfig = {}; }
+
+// We want to listen to the event of code modification.
+window.CodeMirrorConfig.onChange = Scout.send (function (xhr, params) {
 
   var bufcopy = editor.getCode();
   var dmp = new diff_match_patch();
@@ -100,40 +109,19 @@ setInterval(Scout.send(function(xhr, params){
     rev: client.rev,
     delta: client.delta
   };
+
+  params.open.url = '/_/out';
   
   // DEBUG
-  console.log('sending rev : '+params.data.rev+', delta : '+JSON.stringify(params.data.delta));
+  console.log ('sending rev : ' + params.data.rev +
+               ', delta : ' + JSON.stringify (params.data.delta));
   
-  params.error = function(xhr, status) {
+  params.error = function (xhr, status) {
     // TODO
   };
-  
-  params.open.url = '/_/change';
-  
-  
-  params.resp = function(xhr, resp) {
-	
-    // DEBUG
-    console.log('recieved rev : '+resp.rev+', delta : '+JSON.stringify(resp.delta));
-    
-    
-    client.rev = resp.rev;
-    client.delta = [];
-    
-    var dmp = new diff_match_patch();
-    client.delta = Diff.solve(Diff.delta(dmp.diff_main(bufcopy, editor.getCode())), resp.delta);
-    
-    extenditor.applydelta(resp.delta, editor);
-    client.lastcopy = editor.getCode();
-    extenditor.applydelta(client.delta, editor);
-	
-  };
-  
-  
-}), client.timeout);
 
-setInterval((function() {
-  preview = document.getElementById('preview');
-  return function() { preview.contentDocument.open(); preview.contentDocument.write(editor.getCode()); preview.contentDocument.close(); }
-})(), 500);
+});
 
+
+// The end.
+})();
