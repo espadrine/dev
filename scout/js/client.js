@@ -2,6 +2,8 @@
  * Copyright (c) 2011 Jan Keromnes. All rights reserved.
  * */
  
+
+// Information we keep on the state of the content of the editor.
 window.client = {
   user: "dom",
   rev: 0,
@@ -10,6 +12,7 @@ window.client = {
   timeout: 3000 // DEBUG
 };
 
+// Information we keep on code mirror.
 window.editor = new CodeMirror(document.body, {
   content: window.client.lastcopy,
   height: "100%",
@@ -40,6 +43,52 @@ window.extenditor = {
   }
 };
 
+
+
+
+// -- HERE BE AJAX SPACE.
+
+
+// This place is specifically designed to receive information from the server.
+
+// Whenever we load the page, we shall send nothing to
+// the "in" action of the server.
+function getmodif (xhr, params) {
+
+  params.open.url = '/_/in';
+  
+  params.resp = function (xhr, resp) {
+    // We received new information from a collaborator!
+    // (this can be fired a long time after the enclosing function.)
+
+    console.log ('received rev : ' + resp.rev + 
+                 ', delta : ' + JSON.stringify(resp.delta));
+    
+    
+    client.rev = resp.rev;
+    client.delta = [];
+    
+    var diff = (new diff_match_patch ()).diff_main (bufcopy, editor.getCode ());
+    client.delta = Diff.solve (Diff.delta (diff), resp.delta);
+    
+    extenditor.applydelta (resp.delta, editor);
+    client.lastcopy = editor.getCode ();
+    extenditor.applydelta (client.delta, editor);
+
+    setInterval (Scout.send (getmodif)) ();   // We relaunch the connection.
+  };
+
+  params.error = function (xhr, status) {
+    // TODO
+  };
+
+}
+Scout ('body').on ('load', getmdofif);
+
+
+
+
+// FIXME We need to remove this block.
 setInterval(Scout.send(function(xhr, params){
 
   var bufcopy = editor.getCode();
