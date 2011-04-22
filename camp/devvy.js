@@ -69,18 +69,20 @@ var gotamodif = new EventEmitter();
 // We get information on the 'out' channel.
 
 Camp.add ('out', function (query) {
-  Camp.Server.emit ('modif', server (query.rev, query.delta));
+  Camp.Server.emit ('modif', server (query.rev, query.delta), query.user);
 });
 
 
 
 // We send information on the 'in' channel.
 
-Camp.add ('in', function (query, resp) {
+Camp.add ('in', function (query, resp, user) {
   // "A wise sufi monk once said,
   // If what you have to say is not as pleasant as silence, do not talk."
   // We wait till we have something to say.
-  return eventdata;
+  if (user !== query.user) {
+    return resp;
+  } else return undefined;    // The user mustn't receive its own modification.
 }, 'modif');
 
 
