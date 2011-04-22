@@ -2,19 +2,26 @@
  * Copyright (c) 2011 Thaddee Tyl. All rights reserved.
  */
 
+var EventEmitter = require ('events').EventEmitter;
+
 // Register ajax action.
 
-exports.Camp = (function () {
-  var camp = function (action, callback) {
-  	exports.Camp.Actions[action] = callback;
+exports.Server = new EventEmitter ();
+
+exports.add = (function () {
+  var adder = function (action, callback, eventtolisten) {
+  	exports.Server.Actions[action] = callback;
+    if (eventtolisten) {
+      exports.Server.Actions[action].listen = eventtolisten;
+    }
   };
-  camp.Actions = {};
+  exports.Server.Actions = {};
   
-  return camp;
+  return adder;
 })();
 
 
-exports.Camp.mime = {
+exports.Server.mime = {
   'txt': 'text/plain',
   'html': 'text/html',
   'xhtml': 'text/html',
@@ -67,14 +74,14 @@ exports.Camp.mime = {
 
 // Start function.
 
-exports.Camp.start = function (port, debug) {
+exports.Server.start = function (port, debug) {
   port = port || 80;
   
   var http = require('http'),
-  p = require('path'),
-  fs = require('fs'),
-  url = require('url'),
-  qs = require('querystring');
+      p = require('path'),
+      fs = require('fs'),
+      url = require('url'),
+      qs = require('querystring');
   
   http.createServer(function(req,res){
     var uri = url.parse (req.url, true);
@@ -88,8 +95,8 @@ exports.Camp.start = function (port, debug) {
       }
       var realpath = '.' + path;
       
-      if (/^\/_\//.test (path)) {
-        var action = path.slice (3);
+      if (/^\/\$/.test (path)) {
+        var action = path.slice (2);
         
         res.writeHead(200, {'Content-Type': 'application/json'});
         req.on ('data', function (chunk) {
@@ -106,9 +113,27 @@ exports.Camp.start = function (port, debug) {
 
           /* Launch the defined action. */
           if (exports.Camp.Actions[action]) {
-            var resp = JSON.stringify (exports.Camp.Actions[action] (query));
-            res.write (resp);
-            res.end ();
+            var listen = exports.Server.Actions[action].listen;
+            if (listen) {
+
+              // We must wait for an event to happen.
+              exports.Server.once (listen, function () {
+                var args = [];
+                for (var i in arguments) { args.push (arguments[i]); }
+                var resp = exports.Server.Actions[action].apply(query,
+                             [query].concat(args));
+                res.write (JSON.stringify (resp));
+                res.end ();
+              });
+
+            } else {
+              var resp = JSON.stringify (
+                  exports.Server.Actions[action] (query)
+                  );
+              res.write (resp);
+              res.end ();
+            }
+
           } else {
             res.write ('404');
             res.end ();
@@ -122,13 +147,12 @@ exports.Camp.start = function (port, debug) {
         
         /* What extension is it? */
         var ext = p.extname (realpath).slice (1);
-        res.writeHead(200, {'Content-Type': exports.Camp.mime[ext]});
+        res.writeHead(200, {'Content-Type': exports.Server.mime[ext]});
         res.write(src);
         res.end();
       }
     	
-    }
-    catch(e) {
+    } catch(e) {
       res.writeHead(404);
       res.write('404: thou hast finished me!\n');
       if (debug) { res.write(e.toString()); }
