@@ -58,7 +58,7 @@ window.extenditor = {
 // the "in" action of the server.
 function getmodif (xhr, params) {
 
-  params.open.url = '/_/in';
+  params.open.url = '/$in';
   
   params.resp = function (xhr, resp) {
     // We received new information from a collaborator!
@@ -87,7 +87,7 @@ function getmodif (xhr, params) {
 
 }
 
-// Let's begin the connection when the page loads.
+// Let's start the connection when the page loads.
 Scout ('body').on ('load', getmdofif);
 
 
@@ -100,6 +100,8 @@ if (!window.CodeMirrorConfig)  { window.CodeMirrorConfig = {}; }
 // We want to listen to the event of code modification.
 window.CodeMirrorConfig.onChange = Scout.send (function (xhr, params) {
 
+  // Here, we consider the differences between current text
+  // and the text we had last time we pushed changes.
   var bufcopy = editor.getCode();
   var dmp = new diff_match_patch();
   client.delta = Diff.delta(dmp.diff_main(client.lastcopy, editor.getCode()));
@@ -110,7 +112,7 @@ window.CodeMirrorConfig.onChange = Scout.send (function (xhr, params) {
     delta: client.delta
   };
 
-  params.open.url = '/_/out';
+  params.open.url = '/$out';
   
   // DEBUG
   console.log ('sending rev : ' + params.data.rev +
