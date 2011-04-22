@@ -8,7 +8,7 @@
 
 // Information we keep on the state of the content of the editor.
 window.client = {
-  user: "dom",
+  user: +(new Date()),
   rev: 0,
   lastcopy: "<!doctype html>\n<title><\/title>\n\n<body>\n  <canvas id=tutorial width=150 height=150><\/canvas>\n\n  <script>\n    var canvas = document.getElementById('tutorial');\n    var context = canvas.getContext('2d');\n\n    context.fillStyle = 'rgb(250,0,0)';\n    context.fillRect(10, 10, 55, 50);\n\n    context.fillStyle = 'rgba(0, 0, 250, 0.5)';\n    context.fillRect(30, 30, 55, 50);\n  <\/script>\n<\/body>",
   delta: [],
@@ -59,6 +59,7 @@ window.extenditor = {
 function getmodif (xhr, params) {
 
   params.open.url = '/$in';
+  params.data.user = client.user;
   
   params.resp = function (xhr, resp) {
     // We received new information from a collaborator!
@@ -107,8 +108,8 @@ window.CodeMirrorConfig.onChange = Scout.send (function (xhr, params) {
   client.delta = Diff.delta(dmp.diff_main(client.lastcopy, editor.getCode()));
 
   params.data = {
-    usr: client.usr,
     rev: client.rev,
+    user: client.user,
     delta: client.delta
   };
 
