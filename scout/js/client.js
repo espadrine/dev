@@ -22,7 +22,8 @@ window.editor = new CodeMirror(document.body, {
   width: "50%",
   parserfile: ["parsexml.js", "parsecss.js", "tokenizejavascript.js", "parsejavascript.js", "parsehtmlmixed.js"],
   stylesheet: ["css/xmlcolors.css", "css/jscolors.css", "css/csscolors.css"],
-  path: "js/"
+  path: "js/",
+  onChange: Scout.send (sending) ///FIXME: Is there no better way?
 });
 
 window.extenditor = {
@@ -61,7 +62,7 @@ function getmodif (xhr, params) {
   params.open.url = '/$in';
   params.data.user = client.user;
   
-  params.resp = function (xhr, resp) {
+  params.resp = function receiving (xhr, resp) {
     // We received new information from a collaborator!
     // (this can be fired a long time after the enclosing function.)
 
@@ -79,27 +80,29 @@ function getmodif (xhr, params) {
     client.lastcopy = editor.getCode ();
     extenditor.applydelta (client.delta, editor);
 
-    setInterval (Scout.send (getmodif)) ();   // We relaunch the connection.
+    Scout.send (getmodif) ();   // We relaunch the connection.
   };
 
-  params.error = function (xhr, status) {
+  params.error = function receiveerror(xhr, status) {
     // TODO
   };
 
 }
 
 // Let's start the connection when the page loads.
-Scout ('body').on ('load', getmdofif);
+if (!window.addEventListener) {
+  window.addEventListener = function ael (e,f) { window.attachEvent('on'+e,f); }
+}
+window.addEventListener ('load', Scout.send (getmodif), false);
 
 
 
 //2. This place is specifically designed to send information to the server.
 
 
-if (!window.CodeMirrorConfig)  { window.CodeMirrorConfig = {}; }
-
 // We want to listen to the event of code modification.
-window.CodeMirrorConfig.onChange = Scout.send (function (xhr, params) {
+///window.CodeMirrorConfig.onChange = Scout.send (
+ function sending (xhr, params) {
 
   // Here, we consider the differences between current text
   // and the text we had last time we pushed changes.
@@ -119,11 +122,12 @@ window.CodeMirrorConfig.onChange = Scout.send (function (xhr, params) {
   console.log ('sending rev : ' + params.data.rev +
                ', delta : ' + JSON.stringify (params.data.delta));
   
-  params.error = function (xhr, status) {
+  params.error = function senderror (xhr, status) {
     // TODO
   };
 
-});
+ }
+//);
 
 
 // The end.

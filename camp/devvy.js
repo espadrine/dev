@@ -64,8 +64,6 @@ Camp.add ('change', function (query) {
 });
 
 
-var gotamodif = new EventEmitter();
-
 // We get information on the 'out' channel.
 
 Camp.add ('out', function (query) {
