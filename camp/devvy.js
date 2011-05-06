@@ -91,24 +91,3 @@ Camp.add ('dispatch', function (query, resp, user) {
 
 // Time to serve the meal!
 Camp.Server.start (80, true);
-
-//debugging request
-http = require('http');
-resh = function(e){ 
-  return function(res){
-    res.on('data',function(chunk){console.log(':received',chunk.toString());});
-    console.log(':client',e,'got a response');
-  }
-};
-
-req1 = http.request({path:'/$dispatch',method:'POST'},resh('1'));
-req1.end(escape('user=0'));
-req2 = http.request({path:'/$dispatch',method:'POST'},resh('2'));
-req2.end(escape('user=1'));
-
-req3 = http.request({path:'/$new',method:'POST'},resh('3'));
-req3.end(escape('rev=0&user=0&delta=[[1,"1",1]]'));
-req4 = http.request({path:'/$new',method:'POST'},resh('4'));
-req4.end(escape('rev=0&user=1&delta=[[1,"1",1]]'));
-
-//require('repl').start().context.g = global;
