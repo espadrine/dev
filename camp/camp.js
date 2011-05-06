@@ -9,13 +9,17 @@ var EventEmitter = require ('events').EventEmitter;
 exports.Server = new EventEmitter ();
 
 exports.add = (function () {
+
+  // The exports.add function is the following.
   var adder = function (action, callback, eventtolisten) {
   	exports.Server.Actions[action] = callback;
     if (eventtolisten) {
+      // Encapsulate which event we listen to.
       exports.Server.Actions[action].listen = eventtolisten;
     }
   };
-  exports.Server.Actions = {};
+
+  exports.Server.Actions = {};    // This will be extended by the add function.
   
   return adder;
 })();
@@ -75,6 +79,7 @@ exports.Server.mime = {
 // Start function.
 
 exports.Server.start = function (port, debug) {
+  "use strict";
   port = port || 80;
   
   var http = require('http'),
@@ -89,17 +94,20 @@ exports.Server.start = function (port, debug) {
     var query = uri.query;
     
     try {
-      console.log(path);
+      if (debug) { console.log(path); } ///
       if (path.match (/\/$/)) {
         path = path + 'index.html';
       }
       var realpath = '.' + path;
       
       if (/^\/\$/.test (path)) {
+        if (debug) { console.log ('validated action', path); } ///
         var action = path.slice (2);
         
-        res.writeHead(200, {'Content-Type': 'application/json'});
-        req.on ('data', function (chunk) {
+        res.writeHead(200, {'Content-Type': exports.Server.mime['json']});
+
+        /* Handler for when we get a data request. */
+        var gotrequest = function (chunk) {
 
           /* Parse the chunk (it is an object literal). */
           query = qs.parse (unescape(chunk));
@@ -107,56 +115,62 @@ exports.Server.start = function (port, debug) {
             try {
               query[el] = JSON.parse (unescape(query[el]));
             } catch (e) {
-              console.log ('query[el]: ' + query[el] + ' ' + e);
+              console.log ('query:', JSON.stringify(query), e.toString());
             }
           }
 
           /* Launch the defined action. */
-          if (exports.Camp.Actions[action]) {
+          if (exports.Server.Actions[action]) {
             var listen = exports.Server.Actions[action].listen;
             if (listen) {
 
-              // We must wait for an event to happen.
-              exports.Server.once (listen, function () {
-                var args = [];
+              req.pause ();   // We must wait for an event to happen.
+              exports.Server.on (listen, function listencb () {
+                var args = [];    // The argument list to send to action.
                 for (var i in arguments) { args.push (arguments[i]); }
+
                 var resp = exports.Server.Actions[action].apply(query,
                              [query].concat(args));
-                res.write (JSON.stringify (resp));
-                res.end ();
+                if (debug) { console.log ('event',listen,'yields',JSON.stringify(resp)); }
+                if (resp) {
+                  if (debug) { console.log ('subsequently writing it'); }
+                  req.resume ();
+                  res.end (JSON.stringify (resp));
+                  // Remove callback.
+                  exports.Server.removeListener (listen, listencb);
+                }
               });
 
             } else {
+              // It is not an event.
               var resp = JSON.stringify (
-                  exports.Server.Actions[action] (query)
+                  exports.Server.Actions[action].call (query, query)
                   );
-              res.write (resp);
-              res.end ();
+              res.end (resp);
             }
 
           } else {
-            res.write ('404');
-            res.end ();
+            res.end ('404');
           }
 
-        });
+        };
+        req.on ('data', gotrequest);
       
-      } else	{
-        if (debug) { console.log(path); }
+      } else {
+        if (debug) { console.log ('validated', path); }  ///
+        //TODO: make it a stream.
         var src = fs.readFileSync(realpath).toString();	    	
         
         /* What extension is it? */
         var ext = p.extname (realpath).slice (1);
-        res.writeHead(200, {'Content-Type': exports.Server.mime[ext]});
-        res.write(src);
-        res.end();
+        res.writeHead (200, {'Content-Type': exports.Server.mime[ext]});
+        res.end (src);
       }
     	
     } catch(e) {
-      res.writeHead(404);
-      res.write('404: thou hast finished me!\n');
+      res.writeHead (404, 'You killed me!');
       if (debug) { res.write(e.toString()); }
-      res.end();
+      res.end ('404: thou hast finished me!\n');
     }
   
   }).listen(port);

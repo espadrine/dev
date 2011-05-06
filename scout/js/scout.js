@@ -1703,10 +1703,7 @@ Scout = (function () {
   
   var params = {
     data: {},
-    open: {
-      method: 'POST',
-      url: './prog'
-    },
+    open: { method: 'POST' },
     resp: function (xhr, resp) {},
     error: function (xhr, status) {}
   };
@@ -1727,7 +1724,7 @@ Scout = (function () {
     
   var sendxhr = function (target, params) {
     /* XHR stuff now. */
-    if (xhr.open.url) {
+    if (params.open.url) {
       /* We have somewhere to go to. */
       xhr.onreadystatechange = function () {
         if (xhr.readyState === 4) {
