@@ -59,7 +59,7 @@ window.extenditor = {
 // the "in" action of the server.
 function getmodif (xhr, params) {
 
-  params.open.url = '/$in';
+  params.open.url = '/$dispatch';
   params.data.user = client.user;
   
   params.resp = function receiving (xhr, resp) {
@@ -68,18 +68,37 @@ function getmodif (xhr, params) {
 
     console.log ('received rev : ' + resp.rev + 
                  ', delta : ' + JSON.stringify(resp.delta));
+    if (resp.rev === undefined) {
+      Scout.send (getmodif) ();
+      return;
+    }
     
     
-    client.rev = resp.rev;
-    client.delta = [];
-    
-    var diff = (new diff_match_patch ()).diff_main (bufcopy, editor.getCode ());
-    client.delta = Diff.solve (Diff.delta (diff), resp.delta);
-    
-    extenditor.applydelta (resp.delta, editor);
-    client.lastcopy = editor.getCode ();
-    extenditor.applydelta (client.delta, editor);
+    // Let's see what modifications we made to our copy.
+    var diff = (new diff_match_patch ()).diff_main (client.lastcopy,
+                                                    editor.getCode ());
+    var mydelta = Diff.delta (diff);
 
+    if (mydelta.length > 0) {
+      // We did have a couple modifications.
+
+      client.rev = resp.rev;    // There need be a new revision.
+
+      client.delta = Diff.solve (mydelta, resp.delta);
+
+      //extenditor.applydelta (resp.delta, editor);
+      //client.lastcopy = editor.getCode ();
+      extenditor.applydelta (client.delta, editor);
+
+      Scout.send (sending) ();   // Commit the new revision.
+
+    } else {
+      client.rev = resp.rev;
+      extenditor.applydelta (resp.delta, editor);
+    }
+
+    client.lastcopy = editor.getCode ();  // Those modifs were not made by us.
+    
     Scout.send (getmodif) ();   // We relaunch the connection.
   };
 
@@ -101,22 +120,25 @@ window.addEventListener ('load', Scout.send (getmodif), false);
 
 
 // We want to listen to the event of code modification.
-///window.CodeMirrorConfig.onChange = Scout.send (
- function sending (xhr, params) {
+function sending (xhr, params) {
 
   // Here, we consider the differences between current text
   // and the text we had last time we pushed changes.
   var bufcopy = editor.getCode();
   var dmp = new diff_match_patch();
-  client.delta = Diff.delta(dmp.diff_main(client.lastcopy, editor.getCode()));
+  client.delta = Diff.delta(dmp.diff_main(client.lastcopy, bufcopy));
+  client.lastcopy = bufcopy;
+
+  // If there was no modification, we do not do anything.
+  if (client.delta.length === 0) { return; }
 
   params.data = {
-    rev: client.rev,
+    rev: client.rev++,      // Newly sent delta begets new revision.
     user: client.user,
     delta: client.delta
   };
 
-  params.open.url = '/$out';
+  params.open.url = '/$new';
   
   // DEBUG
   console.log ('sending rev : ' + params.data.rev +
@@ -126,8 +148,7 @@ window.addEventListener ('load', Scout.send (getmodif), false);
     // TODO
   };
 
- }
-//);
+}
 
 
 // The end.
