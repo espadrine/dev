@@ -59,8 +59,9 @@ var server = (function () {
 
 var Camp = require ('./camp.js');
 
-Camp.add ('change', function (query) {
-  return server (query.rev, query.delta);
+
+Camp.add ('content', function (query) {
+  return {text: COPY};
 });
 
 
