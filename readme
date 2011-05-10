@@ -1,0 +1,10 @@
+### Fil Rouge ###
+
+# dependancies:
+node-v0.4.7
+
+# libraries included:
+ScoutCamp (2011-02-01)
+CodeMirror-0.94
+diff_match_patch_20110217
+
