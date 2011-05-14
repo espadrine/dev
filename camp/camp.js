@@ -11,10 +11,8 @@ exports.Server = new EventEmitter ();
 exports.add = (function () {
 
   // The exports.add function is the following.
-  var adder = function (action, callback, eventtolisten) {
+  var adder = function (action, callback) {
   	exports.Server.Actions[action] = callback;
-    // Encapsulate which event we listen to.
-    exports.Server.Actions[action].listen = eventtolisten;
   };
 
   exports.Server.Actions = {};    // This will be extended by the add function.
@@ -119,16 +117,22 @@ exports.Server.start = function (port, debug) {
 
           /* Launch the defined action. */
           if (exports.Server.Actions[action]) {
-            var listen = exports.Server.Actions[action].listen;
-            if (listen) {
+            var sentback = exports.Server.Actions[action] (query);
+            if (typeof sentback === 'object') {
+              res.end (JSON.stringify (sentback));
+            } else if (typeof sentback === 'function') {
+              // Event-based ajax call.
+              if (sentback.name === 'anonymous' && debug) {
+                console.log ('warning: action returns an anonymous function.');
+              }
 
+              var listen = sentback.name;
               req.pause ();   // We must wait for an event to happen.
               exports.Server.on (listen, function listencb () {
                 var args = [];    // The argument list to send to action.
                 for (var i in arguments) { args.push (arguments[i]); }
 
-                var resp = exports.Server.Actions[action].apply(query,
-                             [query].concat(args));
+                var resp = sentback.apply (query, args);
                 if (debug) { console.log ('event',listen,'yields',JSON.stringify(resp)); }
                 if (resp !== undefined) {
                   if (debug) { console.log ('subsequently writing it'); }
@@ -139,14 +143,7 @@ exports.Server.start = function (port, debug) {
                 }
               });
 
-            } else {
-              // It is not an event.
-              var resp = JSON.stringify (
-                  exports.Server.Actions[action].call (query, query)
-                  );
-              res.end (resp);
             }
-
           } else {
             res.end ('404');
           }
