@@ -52,6 +52,8 @@ window.extenditor = {
 
 // -- HERE BE AJAX SPACE.
 
+var dmp = new diff_match_patch ();
+
 
 //1. This place is specifically designed to receive information from the server.
 
@@ -75,8 +77,7 @@ function getmodif (xhr, params) {
     
     
     // Let's see what modifications we made to our copy.
-    var diff = (new diff_match_patch ()).diff_main (client.lastcopy,
-                                                    editor.getCode ());
+    var diff = dmp.diff_main (client.lastcopy, editor.getCode ());
     var mydelta = Diff.delta (diff);
 
     if (mydelta.length > 0) {
@@ -125,7 +126,6 @@ function sending (xhr, params) {
   // Here, we consider the differences between current text
   // and the text we had last time we pushed changes.
   var bufcopy = editor.getCode();
-  var dmp = new diff_match_patch();
   client.delta = Diff.delta(dmp.diff_main(client.lastcopy, bufcopy));
   client.lastcopy = bufcopy;
 
@@ -143,6 +143,9 @@ function sending (xhr, params) {
   // DEBUG
   console.log ('sending rev : ' + params.data.rev +
                ', delta : ' + JSON.stringify (params.data.delta));
+  params.resp = function () {
+    console.log ('sent');
+  };
   
   params.error = function senderror (xhr, status) {
     // TODO
