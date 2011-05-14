@@ -13,10 +13,8 @@ exports.add = (function () {
   // The exports.add function is the following.
   var adder = function (action, callback, eventtolisten) {
   	exports.Server.Actions[action] = callback;
-    if (eventtolisten) {
-      // Encapsulate which event we listen to.
-      exports.Server.Actions[action].listen = eventtolisten;
-    }
+    // Encapsulate which event we listen to.
+    exports.Server.Actions[action].listen = eventtolisten;
   };
 
   exports.Server.Actions = {};    // This will be extended by the add function.
@@ -132,7 +130,7 @@ exports.Server.start = function (port, debug) {
                 var resp = exports.Server.Actions[action].apply(query,
                              [query].concat(args));
                 if (debug) { console.log ('event',listen,'yields',JSON.stringify(resp)); }
-                if (resp) {
+                if (resp !== undefined) {
                   if (debug) { console.log ('subsequently writing it'); }
                   req.resume ();
                   res.end (JSON.stringify (resp));

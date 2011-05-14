@@ -64,8 +64,10 @@ Camp.add ('content', function (query) {
   return {text: COPY};
 });
 
+// Buffer of modifications.
+var modifs = [];
 
-// We get information on the 'out' channel.
+// We get information on the 'new' channel.
 
 Camp.add ('new', function (query) {
   console.log ('-- receiving from', query.user, JSON.stringify (query.delta));
@@ -76,7 +78,7 @@ Camp.add ('new', function (query) {
 
 
 
-// We send information on the 'in' channel.
+// We send information on the 'dispatch' channel.
 
 Camp.add ('dispatch', function (query, resp, user) {
   // "A wise sufi monk once said,
