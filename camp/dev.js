@@ -65,12 +65,21 @@ Camp.add ('content', function (query) {
 });
 
 // Buffer of modifications.
-var modifs = [];
+var TimeoutBetweenDispatches = 50000;  // 50 sec.
+var userbuffer = {};
+var usertimeouts = {};
+Camp.Server.on ('modif', function registermodif (resp, user) {
+  for (bufeduser in userbuffer) {
+    if (bufeduser !== user) {
+      userbuffer[bufeduser].push (resp);
+    }
+  }
+});
 
 // We get information on the 'new' channel.
 
 Camp.add ('new', function (query) {
-  console.log ('-- receiving from', query.user, JSON.stringify (query.delta));
+  console.log ('--receiving from', query.user, JSON.stringify (query.delta));///
   Camp.Server.emit ('modif', query, query.user);
   server (query.rev, query.delta);
   return {};
@@ -80,15 +89,29 @@ Camp.add ('new', function (query) {
 
 // We send information on the 'dispatch' channel.
 
-Camp.add ('dispatch', function (query, resp, user) {
+Camp.add ('dispatch', function (query) {
+  if (userbuffer[query.user] !== undefined) {
+    return userbuffer[query.user].shift();  // Don't wait, give the stuff.
+  }
   // "A wise sufi monk once said,
   // If what you have to say is not as pleasant as silence, do not talk."
   // We wait till we have something to say.
-  if (user !== query.user) {
-    console.log ('-- sending to', query.user, JSON.stringify (resp.delta));
-    return resp;
-  } else return undefined;    // The user mustn't receive its own modification.
-}, 'modif');
+  return function modif (resp, user) {
+    if (user !== query.user) {
+      // The modification was not made by the one that sent it.
+      console.log ('--sending to', query.user, JSON.stringify (resp.delta));///
+      // This dispatch will close, but we need to remember this user
+      // for the small timelapse before he reconnects.
+      userbuffer[query.user] = [];
+      if (usertimeouts[query.user]) { clearTimeout (usertimeouts[query.user]); }
+      usertimeouts[query.user] = setTimeout (TimeoutBetweenDispatches,
+        function activatebuffer () {
+          delete userbuffer[query.user];
+      });
+      return resp;  // Send the modification to the client.
+    } else return undefined;   // The user mustn't receive its own modification.
+  };
+});
 
 
 
