@@ -55,6 +55,7 @@ var server = (function () {
 })();
 
 
+
 /* Lauching the server. */
 
 var Camp = require ('./camp.js');
@@ -76,10 +77,12 @@ Camp.Server.on ('modif', function registermodif (resp, user) {
   }
 });
 
+
+
 // We get information on the 'new' channel.
 
 Camp.add ('new', function (query) {
-  console.log ('--receiving from', query.user, JSON.stringify (query.delta));///
+  console.log ('--receiving from', query.user, JSON.stringify (query.delta)); ///
   Camp.Server.emit ('modif', query, query.user);
   server (query.rev, query.delta);
   return {};
@@ -98,8 +101,8 @@ Camp.add ('dispatch', function (query) {
   // We wait till we have something to say.
   return function modif (resp, user) {
     if (user !== query.user) {
-      // The modification was not made by the one that sent it.
-      console.log ('--sending to', query.user, JSON.stringify (resp.delta));///
+      // Do not send modification to the user who sent it in the first place.
+      console.log ('--sending to', query.user, JSON.stringify (resp.delta)); ///
       // This dispatch will close, but we need to remember this user
       // for the small timelapse before he reconnects.
       userbuffer[query.user] = [];
@@ -117,3 +120,4 @@ Camp.add ('dispatch', function (query) {
 
 // Time to serve the meal!
 Camp.Server.start (80, true);
+console.log('dev is live! http://localhost/');
