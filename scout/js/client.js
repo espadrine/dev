@@ -31,7 +31,6 @@ window.extenditor = {
     var car = 0;
     var max = editor.getCode().length;
     var line = editor.firstLine();
-    console.log ('delta',delta);
     for(var i = 0 ; i < delta.length ; i++ ) {
       while(delta[i][2] > (car + editor.lineContent(line).length)) {
         car += editor.lineContent(line).length + 1;
@@ -84,17 +83,15 @@ function getmodif (xhr, params) {
     if (mydelta.length > 0) {
       // We did have a couple modifications.
 
+      Scout.send (sending) ();   // Commit the new revision.
+
       client.rev = resp.rev;    // There need be a new revision.
 
-      console.log ('delta',resp.delta);
       client.delta = Diff.solve (mydelta, resp.delta);
-      console.log ('delta',resp.delta);
 
       extenditor.applydelta (resp.delta, editor);
       //client.lastcopy = editor.getCode ();
       //extenditor.applydelta (client.delta, editor);
-
-      Scout.send (sending) ();   // Commit the new revision.
 
     } else {
       client.rev = resp.rev;
