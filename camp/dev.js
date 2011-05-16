@@ -55,6 +55,7 @@ var server = (function () {
 })();
 
 
+
 /* Lauching the server. */
 
 var Camp = require ('./camp.js');
@@ -77,6 +78,8 @@ Camp.Server.on ('modif', function registermodif (resp) {
     }
   }
 });
+
+
 
 // We get information on the 'new' channel.
 
@@ -124,3 +127,4 @@ Camp.add ('dispatch', function (query) {
 
 // Time to serve the meal!
 Camp.Server.start (80, true);
+console.log('dev is live! http://localhost/');
