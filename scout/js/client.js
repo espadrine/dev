@@ -143,9 +143,6 @@ function sending (xhr, params) {
   // DEBUG
   console.log ('sending rev : ' + params.data.rev +
                ', delta : ' + JSON.stringify (params.data.delta));
-  params.resp = function () {
-    console.log ('sent');
-  };
   
   params.error = function senderror (xhr, status) {
     // TODO
