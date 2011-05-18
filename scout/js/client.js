@@ -53,6 +53,8 @@ window.extenditor = {
 // -- HERE BE AJAX SPACE.
 
 var dmp = new diff_match_patch ();
+// We need this instance of scout to avoid conflicts.
+var Scout2 = Scout.maker ();
 
 
 //1. This place is specifically designed to receive information from the server.
@@ -63,6 +65,7 @@ function getmodif (xhr, params) {
 
   params.open.url = '/$dispatch';
   params.data.user = client.user;
+  console.log ('dispatched');
   
   params.resp = function receiving (xhr, resp) {
     // We received new information from a collaborator!
@@ -71,7 +74,7 @@ function getmodif (xhr, params) {
     console.log ('received rev : ' + resp.rev + 
                  ', delta : ' + JSON.stringify(resp.delta));
     if (resp.rev === undefined) {
-      Scout.send (getmodif) ();
+      Scout2.send (getmodif) ();
       return;
     }
     
@@ -100,7 +103,7 @@ function getmodif (xhr, params) {
 
     client.lastcopy = editor.getCode ();  // Those modifs were not made by us.
     
-    Scout.send (getmodif) ();   // We relaunch the connection.
+    Scout2.send (getmodif) ();   // We relaunch the connection.
   };
 
   params.error = function receiveerror(xhr, status) {
@@ -113,7 +116,7 @@ function getmodif (xhr, params) {
 if (!window.addEventListener) {
   window.addEventListener = function ael (e,f) { window.attachEvent('on'+e,f); }
 }
-window.addEventListener ('load', Scout.send (getmodif), false);
+window.addEventListener ('load', Scout2.send (getmodif), false);
 
 
 
@@ -143,6 +146,9 @@ function sending (xhr, params) {
   // DEBUG
   console.log ('sending rev : ' + params.data.rev +
                ', delta : ' + JSON.stringify (params.data.delta));
+  params.resp = function () {
+    console.log ('sent');
+  };
   
   params.error = function senderror (xhr, status) {
     // TODO

@@ -93,8 +93,13 @@ Camp.add ('new', function (query) {
 // We send information on the 'dispatch' channel.
 
 Camp.add ('dispatch', function (query) {
+  console.log ('--connect dispatch [' + query.user + ']');
   if (userbuffer[query.user] !== undefined) {
-    return userbuffer[query.user].shift();  // Don't wait, give the stuff.
+    if (userbuffer[query.user].length > 0) {
+      return userbuffer[query.user].shift();  // Don't wait, give the stuff.
+    } else {
+      delete userbuffer[query.user];
+    }
   }
 
   // "A wise sufi monk once said,
@@ -106,6 +111,7 @@ Camp.add ('dispatch', function (query) {
 
       // The modification was not made by the one that sent it.
       console.log ('--sending to', query.user, JSON.stringify (resp.delta));///
+      console.log ('--hence closing dispatch for', query.user);///
 
       // This dispatch will close, but we need to remember this user
       // for the small timelapse before he reconnects.
