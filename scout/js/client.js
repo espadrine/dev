@@ -12,7 +12,7 @@ window.client = {
   rev: 0,
   lastcopy: "<!doctype html>\n<title><\/title>\n\n<body>\n  <canvas id=tutorial width=150 height=150><\/canvas>\n\n  <script>\n    var canvas = document.getElementById('tutorial');\n    var context = canvas.getContext('2d');\n\n    context.fillStyle = 'rgb(250,0,0)';\n    context.fillRect(10, 10, 55, 50);\n\n    context.fillStyle = 'rgba(0, 0, 250, 0.5)';\n    context.fillRect(30, 30, 55, 50);\n  <\/script>\n<\/body>",
   delta: [],
-  timeout: 3000 // DEBUG
+  notmychange: false
 };
 
 // Information we keep on code mirror.
@@ -23,7 +23,13 @@ window.editor = new CodeMirror(document.body, {
   parserfile: ["parsexml.js", "parsecss.js", "tokenizejavascript.js", "parsejavascript.js", "parsehtmlmixed.js"],
   stylesheet: ["css/xmlcolors.css", "css/jscolors.css", "css/csscolors.css"],
   path: "js/",
-  onChange: Scout.send (sending) ///FIXME: Is there no better way?
+  onChange: function () {
+    if (client.notmychange) {
+      client.notmychange = false;
+    } else {
+      Scout.send (sending) (); ///FIXME: Is there no better way?
+    }
+  }
 });
 
 window.extenditor = {
@@ -101,6 +107,7 @@ function getmodif (xhr, params) {
       extenditor.applydelta (resp.delta, editor);
     }
 
+    client.notmychange = true;
     client.lastcopy = editor.getCode ();  // Those modifs were not made by us.
     
     Scout2.send (getmodif) ();   // We relaunch the connection.
