@@ -12,7 +12,7 @@ window.client = {
   rev: 0,
   lastcopy: "<!doctype html>\n<title><\/title>\n\n<body>\n  <canvas id=tutorial width=150 height=150><\/canvas>\n\n  <script>\n    var canvas = document.getElementById('tutorial');\n    var context = canvas.getContext('2d');\n\n    context.fillStyle = 'rgb(250,0,0)';\n    context.fillRect(10, 10, 55, 50);\n\n    context.fillStyle = 'rgba(0, 0, 250, 0.5)';\n    context.fillRect(30, 30, 55, 50);\n  <\/script>\n<\/body>",
   delta: [],
-  notmychange: false
+  hastyped: true
 };
 
 // Information we keep on code mirror.
@@ -24,18 +24,17 @@ window.editor = new CodeMirror(document.body, {
   stylesheet: ["css/xmlcolors.css", "css/jscolors.css", "css/csscolors.css"],
   path: "js/",
   onChange: function () {
-    if (client.notmychange) {
-      client.notmychange = false;
-    } else {
+    if (client.hastyped) {
       Scout.send (sending) (); ///FIXME: Is there no better way?
     }
   }
 });
 
+
 window.extenditor = {
   applydelta : function(delta, editor) {
     // Modifying the code
-    client.notmychange = true;
+    client.hastyped = false;
     var car = 0;
     var max = editor.getCode().length;
     var line = editor.firstLine();
@@ -52,10 +51,16 @@ window.extenditor = {
         editor.removeFromLine(line, pos, delta[i][1]);
       }
     }
+    client.hastyped = true;
   }
 };
 
 
+// Self-defined input detector that sends information when necessary.
+
+if (!window.addEventListener) {
+  window.addEventListener = function ael (e,f) { window.attachEvent('on'+e,f); }
+}
 
 
 // -- HERE BE AJAX SPACE.
@@ -118,9 +123,6 @@ function getmodif (xhr, params) {
 }
 
 // Let's start the connection when the page loads.
-if (!window.addEventListener) {
-  window.addEventListener = function ael (e,f) { window.attachEvent('on'+e,f); }
-}
 window.addEventListener ('load', Scout2.send (getmodif), false);
 
 
