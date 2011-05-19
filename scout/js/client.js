@@ -34,6 +34,8 @@ window.editor = new CodeMirror(document.body, {
 
 window.extenditor = {
   applydelta : function(delta, editor) {
+    // Modifying the code
+    client.notmychange = true;
     var car = 0;
     var max = editor.getCode().length;
     var line = editor.firstLine();
@@ -79,10 +81,6 @@ function getmodif (xhr, params) {
 
     console.log ('received rev : ' + resp.rev + 
                  ', delta : ' + JSON.stringify(resp.delta));
-    if (resp.rev === undefined) {
-      Scout2.send (getmodif) ();
-      return;
-    }
     
     
     // Let's see what modifications we made to our copy.
@@ -91,6 +89,7 @@ function getmodif (xhr, params) {
 
     if (mydelta.length > 0) {
       // We did have a couple modifications.
+      console.log ('We did have a couple modifications.');
 
       Scout.send (sending) ();   // Commit the new revision.
 
@@ -107,7 +106,6 @@ function getmodif (xhr, params) {
       extenditor.applydelta (resp.delta, editor);
     }
 
-    client.notmychange = true;
     client.lastcopy = editor.getCode ();  // Those modifs were not made by us.
     
     Scout2.send (getmodif) ();   // We relaunch the connection.

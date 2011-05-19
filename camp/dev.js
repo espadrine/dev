@@ -86,7 +86,7 @@ Camp.Server.on ('modif', function registermodif (resp) {
 Camp.add ('new', function (query) {
   console.log ('--receiving from', query.user, JSON.stringify (query.delta));///
   Camp.Server.emit ('modif', query);
-  server (query.rev, query.delta);
+  //server (query.rev, query.delta);
   return {};
 });
 
