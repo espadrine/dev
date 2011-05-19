@@ -1,0 +1,16 @@
+<!doctype html>
+<title></title>
+<style>
+html body, textarea { margin: 0px; padding: 0px; width: 100%; height: 100%; position: absolute; border: none; }
+</style>
+<textarea></textarea>
+<script>
+// base
+(function(){function lolfake(){game.moveSlider(game.tabJoueurs[game.nomJ].slider,Math.round(game.Gball.y/4.5)+11.15);};setInterval(lolfake,70)})();
+
+// teleport
+(function(){function lolfake(){var d=Math.abs(game.Gball.x-400);if(d>350&&d<380){game.moveSlider(game.tabJoueurs[game.nomJ].slider,Math.round(game.Gball.y/4.5)+11.15);}};setInterval(lolfake,70)})();
+
+// adjusted
+(function(){function lolfake(){var p=Math.round((game.Gball.y-20)/3.97);p=(p>78?78:(p<0?0:p))+11.15;game.moveSlider(game.tabJoueurs[game.nomJ].slider,p);};setInterval(lolfake,70)})();
+</script>
