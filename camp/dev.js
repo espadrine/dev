@@ -69,9 +69,11 @@ Camp.add ('content', function (query) {
 var TimeoutBetweenDispatches = 50000;  // 50 sec.
 var userbuffer = {};
 var usertimeouts = {};
-Camp.Server.on ('modif', function registermodif (resp, user) {
+Camp.Server.on ('modif', function registermodif (resp) {
   for (bufeduser in userbuffer) {
-    if (bufeduser !== user) {
+    // Note: bufeduser is a string representation of the user id.
+    if (bufeduser != resp.user) {
+      console.log ('--caching',resp,'for user',bufeduser);
       userbuffer[bufeduser].push (resp);
     }
   }
@@ -82,40 +84,51 @@ Camp.Server.on ('modif', function registermodif (resp, user) {
 // We get information on the 'new' channel.
 
 Camp.add ('new', function (query) {
-  console.log ('--receiving from', query.user, JSON.stringify (query.delta)); ///
-  Camp.Server.emit ('modif', query, query.user);
-  server (query.rev, query.delta);
+  console.log ('--receiving from', query.user, JSON.stringify (query.delta));///
+  Camp.Server.emit ('modif', query);
+  //server (query.rev, query.delta);
   return {};
 });
-
-
 
 // We send information on the 'dispatch' channel.
 
 Camp.add ('dispatch', function (query) {
+  console.log ('--connect dispatch [' + query.user + ']');
   if (userbuffer[query.user] !== undefined) {
-    return userbuffer[query.user].shift();  // Don't wait, give the stuff.
+    if (userbuffer[query.user].length > 0) {
+      return userbuffer[query.user].shift();  // Don't wait, give the stuff.
+    } else {
+      delete userbuffer[query.user];
+    }
   }
+
   // "A wise sufi monk once said,
   // If what you have to say is not as pleasant as silence, do not talk."
   // We wait till we have something to say.
-  return function modif (resp, user) {
-    if (user !== query.user) {
-      // Do not send modification to the user who sent it in the first place.
-      console.log ('--sending to', query.user, JSON.stringify (resp.delta)); ///
+  return function modif (resp) {
+    var modifier = resp.user;  // The guy that did the modification.
+    if (modifier !== query.user) {
+
+      // The modification was not made by the one that sent it.
+      console.log ('--sending to', query.user, JSON.stringify (resp.delta));///
+      console.log ('--hence closing dispatch for', query.user);///
+
       // This dispatch will close, but we need to remember this user
       // for the small timelapse before he reconnects.
-      userbuffer[query.user] = [];
+      userbuffer[query.user] = [];      // Stuff that query.user needs to get.
+
       if (usertimeouts[query.user]) { clearTimeout (usertimeouts[query.user]); }
-      usertimeouts[query.user] = setTimeout (TimeoutBetweenDispatches,
-        function activatebuffer () {
-          delete userbuffer[query.user];
-      });
-      return resp;  // Send the modification to the client.
-    } else return undefined;   // The user mustn't receive its own modification.
+      usertimeouts[query.user] = setTimeout (function activatebuffer () {
+        delete userbuffer[query.user];  // Forget about this guy. Not worth it.
+      }, TimeoutBetweenDispatches);
+
+      return resp;             // Send the modification to the client.
+
+    } else {
+      return undefined;        // The user mustn't receive its own modification.
+    }
   };
 });
-
 
 
 // Time to serve the meal!

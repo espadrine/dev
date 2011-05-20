@@ -12,7 +12,7 @@ window.client = {
   rev: 0,
   lastcopy: "<!doctype html>\n<title><\/title>\n\n<body>\n  <canvas id=tutorial width=150 height=150><\/canvas>\n\n  <script>\n    var canvas = document.getElementById('tutorial');\n    var context = canvas.getContext('2d');\n\n    context.fillStyle = 'rgb(250,0,0)';\n    context.fillRect(10, 10, 55, 50);\n\n    context.fillStyle = 'rgba(0, 0, 250, 0.5)';\n    context.fillRect(30, 30, 55, 50);\n  <\/script>\n<\/body>",
   delta: [],
-  timeout: 3000 // DEBUG
+  hastyped: true
 };
 
 // Information we keep on code mirror.
@@ -23,11 +23,18 @@ window.editor = new CodeMirror(document.body, {
   parserfile: ["parsexml.js", "parsecss.js", "tokenizejavascript.js", "parsejavascript.js", "parsehtmlmixed.js"],
   stylesheet: ["css/xmlcolors.css", "css/jscolors.css", "css/csscolors.css"],
   path: "js/",
-  onChange: Scout.send (sending) ///FIXME: Is there no better way?
+  onChange: function () {
+    if (client.hastyped) {
+      Scout.send (sending) (); ///FIXME: Is there no better way?
+    }
+  }
 });
+
 
 window.extenditor = {
   applydelta : function(delta, editor) {
+    // Modifying the code
+    client.hastyped = false;
     var car = 0;
     var max = editor.getCode().length;
     var line = editor.firstLine();
@@ -44,15 +51,23 @@ window.extenditor = {
         editor.removeFromLine(line, pos, delta[i][1]);
       }
     }
+    client.hastyped = true;
   }
 };
 
 
+// Self-defined input detector that sends information when necessary.
+
+if (!window.addEventListener) {
+  window.addEventListener = function ael (e,f) { window.attachEvent('on'+e,f); }
+}
 
 
 // -- HERE BE AJAX SPACE.
 
 var dmp = new diff_match_patch ();
+// We need this instance of scout to avoid conflicts.
+var Scout2 = Scout.maker ();
 
 
 //1. This place is specifically designed to receive information from the server.
@@ -63,6 +78,7 @@ function getmodif (xhr, params) {
 
   params.open.url = '/$dispatch';
   params.data.user = client.user;
+  console.log ('dispatched');
   
   params.resp = function receiving (xhr, resp) {
     // We received new information from a collaborator!
@@ -70,10 +86,6 @@ function getmodif (xhr, params) {
 
     console.log ('received rev : ' + resp.rev + 
                  ', delta : ' + JSON.stringify(resp.delta));
-    if (resp.rev === undefined) {
-      Scout.send (getmodif) ();
-      return;
-    }
     
     
     // Let's see what modifications we made to our copy.
@@ -82,16 +94,17 @@ function getmodif (xhr, params) {
 
     if (mydelta.length > 0) {
       // We did have a couple modifications.
+      console.log ('We did have a couple modifications.');
+
+      Scout.send (sending) ();   // Commit the new revision.
 
       client.rev = resp.rev;    // There need be a new revision.
 
       client.delta = Diff.solve (mydelta, resp.delta);
 
-      //extenditor.applydelta (resp.delta, editor);
+      extenditor.applydelta (resp.delta, editor);
       //client.lastcopy = editor.getCode ();
-      extenditor.applydelta (client.delta, editor);
-
-      Scout.send (sending) ();   // Commit the new revision.
+      //extenditor.applydelta (client.delta, editor);
 
     } else {
       client.rev = resp.rev;
@@ -100,7 +113,7 @@ function getmodif (xhr, params) {
 
     client.lastcopy = editor.getCode ();  // Those modifs were not made by us.
     
-    Scout.send (getmodif) ();   // We relaunch the connection.
+    Scout2.send (getmodif) ();   // We relaunch the connection.
   };
 
   params.error = function receiveerror(xhr, status) {
@@ -110,10 +123,7 @@ function getmodif (xhr, params) {
 }
 
 // Let's start the connection when the page loads.
-if (!window.addEventListener) {
-  window.addEventListener = function ael (e,f) { window.attachEvent('on'+e,f); }
-}
-window.addEventListener ('load', Scout.send (getmodif), false);
+window.addEventListener ('load', Scout2.send (getmodif), false);
 
 
 

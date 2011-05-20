@@ -15,16 +15,15 @@
   <script>
 // The following code makes the preceding iframe reflect the state
 // of the code you write.
-setInterval ((function (preview) {
-  return function() {
+  setInterval (function() {
+    var preview = document.getElementById ('preview').contentDocument;
     preview.open ();
     preview.write (editor.getCode ());
     preview.close ();
-  }
-})(document.getElementById ('preview').contentDocument), 500);
+  }, 500);
   </script>
   
-  <script src=js/scout.js></script>
+  <script src=js/scoutmin.js></script>
   <script src=js/codemirror.js></script>
   <script src=js/diff.js></script>
   <script src=js/delta.js></script>
