@@ -138,8 +138,13 @@ exports.Server.start = function (port, debug) {
                 if (debug) { console.log ('event',listen,'yields',JSON.stringify(resp)); }
                 if (resp !== undefined) {
                   if (debug) { console.log ('subsequently writing it'); }
-                  req.resume ();
-                  res.end (JSON.stringify (resp));
+                  try { // TODO: better global exception handling?
+                    req.resume ();
+                    res.end (JSON.stringify (resp));
+                  } catch(e) {
+                    console.log('warning: lost a',listen,'connection');
+                    res.end();
+                  };
                   // Remove callback.
                   exports.Server.removeListener (listen, listencb);
                 }
