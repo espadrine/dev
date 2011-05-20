@@ -102,12 +102,7 @@ function getmodif (xhr, params) {
       extenditor.applydelta (resp.delta, editor);
 
       // Commit the new revision.
-      Scout.send (sending (mydelta, function () {
-        //var diff = dmp.diff_main (client.lastcopy, editor.getCode ());
-        //var mydelta = Diff.delta (diff);
-        //client.delta = Diff.solve (mydelta, resp.delta);
-        //extenditor.applydelta (resp.delta, editor);
-      })) ();
+      Scout.send (sending (mydelta)) ();
 
       client.rev = resp.rev;    // There need be a new revision.
 
@@ -140,7 +135,7 @@ window.addEventListener ('load', Scout2.send (getmodif), false);
 
 
 // We want to listen to the event of code modification.
-var sending = function (delta, whendone) {
+var sending = function (delta) {
   return function (xhr, params) {
 
     // If there was no modification, we do not do anything.
@@ -158,7 +153,6 @@ var sending = function (delta, whendone) {
     console.log ('sending rev : ' + params.data.rev +
                  ', delta : ' + JSON.stringify (params.data.delta));
     params.resp = function () {
-      if (whendone !== undefined) { whendone (); }
       console.log ('sent');
     };
     
