@@ -27,7 +27,12 @@ window.editor = new CodeMirror(document.body, {
     if (client.notmychange) {
       client.notmychange = false;
     } else {
-      Scout.send (sending) (); ///FIXME: Is there no better way?
+      // Here, we consider the differences between current text
+      // and the text we had last time we pushed changes.
+      var bufcopy = editor.getCode();
+      var mydelta = Diff.delta(dmp.diff_main(client.lastcopy, bufcopy));
+      client.lastcopy = bufcopy;
+      Scout.send (sending(mydelta)) (); ///FIXME: Is there no better way?
     }
   }
 });
@@ -52,7 +57,6 @@ window.extenditor = {
         editor.removeFromLine(line, pos, delta[i][1]);
       }
     }
-    client.notmychange = false;
   }
 };
 
@@ -92,12 +96,18 @@ function getmodif (xhr, params) {
       // We did have a couple modifications.
       console.log ('We did have a couple modifications.');
 
-      client.delta = Diff.solve (mydelta, resp.delta);
+      client.lastcopy = editor.getCode ();
 
+      client.delta = Diff.solve (mydelta, resp.delta);
       extenditor.applydelta (resp.delta, editor);
-      //client.lastcopy = editor.getCode ();
-      //extenditor.applydelta (client.delta, editor);
-      Scout.send (sending) ();   // Commit the new revision.
+
+      // Commit the new revision.
+      Scout.send (sending (mydelta, function () {
+        //var diff = dmp.diff_main (client.lastcopy, editor.getCode ());
+        //var mydelta = Diff.delta (diff);
+        //client.delta = Diff.solve (mydelta, resp.delta);
+        //extenditor.applydelta (resp.delta, editor);
+      })) ();
 
       client.rev = resp.rev;    // There need be a new revision.
 
@@ -107,7 +117,6 @@ function getmodif (xhr, params) {
       extenditor.applydelta (resp.delta, editor);
     }
 
-    client.notmychange = true;
     client.lastcopy = editor.getCode ();  // Those modifs were not made by us.
     
     Scout2.send (getmodif) ();   // We relaunch the connection.
@@ -131,37 +140,34 @@ window.addEventListener ('load', Scout2.send (getmodif), false);
 
 
 // We want to listen to the event of code modification.
-function sending (xhr, params) {
+var sending = function (delta, whendone) {
+  return function (xhr, params) {
 
-  // Here, we consider the differences between current text
-  // and the text we had last time we pushed changes.
-  var bufcopy = editor.getCode();
-  client.delta = Diff.delta(dmp.diff_main(client.lastcopy, bufcopy));
-  client.lastcopy = bufcopy;
+    // If there was no modification, we do not do anything.
+    if (delta.length === 0) { return; }
 
-  // If there was no modification, we do not do anything.
-  if (client.delta.length === 0) { return; }
+    params.data = {
+      rev: client.rev++,      // Newly sent delta begets new revision.
+      user: client.user,
+      delta: delta
+    };
 
-  params.data = {
-    rev: client.rev++,      // Newly sent delta begets new revision.
-    user: client.user,
-    delta: client.delta
+    params.open.url = '/$new';
+    
+    // DEBUG
+    console.log ('sending rev : ' + params.data.rev +
+                 ', delta : ' + JSON.stringify (params.data.delta));
+    params.resp = function () {
+      if (whendone !== undefined) { whendone (); }
+      console.log ('sent');
+    };
+    
+    params.error = function senderror (xhr, status) {
+      // TODO
+    };
+
   };
-
-  params.open.url = '/$new';
-  
-  // DEBUG
-  console.log ('sending rev : ' + params.data.rev +
-               ', delta : ' + JSON.stringify (params.data.delta));
-  params.resp = function () {
-    console.log ('sent');
-  };
-  
-  params.error = function senderror (xhr, status) {
-    // TODO
-  };
-
-}
+};
 
 
 // The end.
