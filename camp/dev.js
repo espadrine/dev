@@ -1,58 +1,55 @@
 /* devvy.js: nodejs config file.
  * Copyright (c) Thaddee Tyl. All rights reserved. */
 
-INITREV = 0;
-COPY = '';
-ID = 0;
+COPY = "<!doctype html>\n<title><\/title>\n\n<body>\n  <canvas id=tutorial width=150 height=150><\/canvas>\n\n  <script>\n    var canvas = document.getElementById('tutorial');\n    var context = canvas.getContext('2d');\n\n    context.fillStyle = 'rgb(250,0,0)';\n    context.fillRect(10, 10, 55, 50);\n\n    context.fillStyle = 'rgba(0, 0, 250, 0.5)';\n    context.fillRect(30, 30, 55, 50);\n  <\/script>\n<\/body>";
 
-var Diff = require ('./diff.js');
+var DMP = require ('./diff.js');
+var DIFF_EQUAL = DMP.DIFF_EQUAL;
+var dmp = new DMP.diff_match_patch ();
 
-var server = (function () {
+// Each user is identified by a number (might be converted to a string),
+// and has an associated lastcopy.
+//   eg, users = {'1234': {lastcopy: 'foo bar...',
+//                         buffer: [],       // To be sent on dispatch.
+//                         bufferhim: false, // To see if we need to buffer.
+//                         timeout: 0}}      // Before we forget this user.
+var users = {};
 
-  var rev = INITREV;
-  var copy = COPY;
-  var deltas = [];
+// Update the copy corresponding to a user, because of user input.
+var sync = function (resp) {
+  var username = resp.user;
+  var client = users[username];
 
 
-  return function (theirrev, delta) {
-    /* Change in the copy. */
+  // Patch last copy.
+  // Note: dmp.patch_apply returns the resulting text in the first element
+  // of the array.
+  var lastcopypatch = dmp.patch_make (client.lastcopy,
+        dmp.diff_fromDelta (client.lastcopy, resp.delta));
+  client.lastcopy = dmp.patch_apply (lastcopypatch, client.lastcopy) [0];
 
-    var senddelta = [];
-    for (var i=theirrev; i<rev; i++) {
-      for (var j=0; j<deltas[i].length; j++) {
-        senddelta.push(deltas[i][j]);
-      }
-    }
+  // Patch working copy.
+  var copypatch = dmp.patch_make (COPY, dmp.diff_fromDelta (COPY, resp.delta));
+  COPY = dmp.patch_apply (copypatch, COPY) [0];
 
-    if (delta && delta.length !== 0) {
-      /* He brings a change. */
+  // Create the patch that we want to send to the wire.
+  var newdiff = dmp.diff_main (client.lastcopy, COPY);
+  if (newdiff.length > 2) {
+    dmp.diff_cleanupSemantic (newdiff);
+    dmp.diff_cleanupEfficiency (newdiff);
+  }
 
-      if (theirrev <= rev) {
-        /* There were other changes since. */
+  // Update the last copy.
+  client.lastcopy = COPY;
+  
+  // Send back the new diff if there is something to it.
+  if (newdiff.length !== 1 || newdiff[0][0] !== DIFF_EQUAL) {
 
-        /* Solve conflicts with previous revisions. */
-        Diff.solve(senddelta, delta);
 
-        json = {rev:rev+1, delta:senddelta};
-
-      } else {
-        /* There were no changes since. */
-        json = {rev:rev+1, delta:[]};
-      }
-
-      deltas[rev++] = delta;
-      copy = Diff.applydelta(delta, copy);
-
-    } else {
-      /* He did not change his copy. */
-      json = {rev:rev, delta:senddelta};
-    }
-
-    return json;
-
-  };
-
-})();
+    // Send the new diff. (after the function returns.)
+  }
+    
+};  // function modif 
 
 
 
@@ -61,32 +58,43 @@ var server = (function () {
 var Camp = require ('./camp.js');
 
 
-Camp.add ('content', function (query) {
-  return {text: COPY};
-});
-
 // Buffer of modifications.
-var TimeoutBetweenDispatches = 50000;  // 50 sec.
+var TimeoutBetweenDispatches = 60 * 40000;  // 4 min.
 var userbuffer = {};
 var usertimeouts = {};
-Camp.Server.on ('modif', function registermodif (resp) {
-  for (bufeduser in userbuffer) {
-    // Note: bufeduser is a string representation of the user id.
-    if (bufeduser != resp.user) {
-      console.log ('--caching',resp,'for user',bufeduser);
-      userbuffer[bufeduser].push (resp);
-    }
-  }
-});
 
+
+// First time someone connects, he sends a content action.
+
+Camp.add ('data', function (query) {
+  users[query.user] = {
+    lastcopy: COPY,
+    buffer: [],
+    bufferhim: false,
+    timeout: 0
+  };
+  return {data: COPY? COPY: '\n'}; // If there is something to be sent, send it.
+});
 
 
 // We get information on the 'new' channel.
 
 Camp.add ('new', function (query) {
   console.log ('--receiving from', query.user, JSON.stringify (query.delta));///
+  // Does the user already exist?
+  if (!users[query.user]) {
+    console.log ('--nonexisting user [' + query.user + ']');
+    return {};
+  }
+  // Caching for those in need.
+  for (var user in users) {
+    if (users[user].bufferhim && user != query.user) {
+      console.log ('--caching',query.delta,'for user',user);
+      users[user].buffer.push (query);
+    }
+  }
+  sync (query);  // Change our COPY.
   Camp.Server.emit ('modif', query);
-  //server (query.rev, query.delta);
   return {};
 });
 
@@ -94,12 +102,13 @@ Camp.add ('new', function (query) {
 
 Camp.add ('dispatch', function (query) {
   console.log ('--connect dispatch [' + query.user + ']');
-  if (userbuffer[query.user] !== undefined) {
-    if (userbuffer[query.user].length > 0) {
-      return userbuffer[query.user].shift();  // Don't wait, give the stuff.
-    } else {
-      delete userbuffer[query.user];
-    }
+  var userbuffer = users[query.user].buffer;
+  if (userbuffer.bufferhim && userbuffer.length > 0) {
+    console.log ('--returning cached content to',query.user);
+    return userbuffer.shift();      // Don't wait, give the stuff.
+  } else {
+    userbuffer.bufferhim = false;   // and now, userbuffer.buffer is [].
+    clearTimeout (users[query.user].timeout);
   }
 
   // "A wise sufi monk once said,
@@ -113,13 +122,16 @@ Camp.add ('dispatch', function (query) {
       console.log ('--sending to', query.user, JSON.stringify (resp.delta));///
       console.log ('--hence closing dispatch for', query.user);///
 
-      // This dispatch will close, but we need to remember this user
-      // for the small timelapse before he reconnects.
-      userbuffer[query.user] = [];      // Stuff that query.user needs to get.
+      // Since we send it, it will be synced.
+      users[query.user].lastcopy = COPY;
 
-      if (usertimeouts[query.user]) { clearTimeout (usertimeouts[query.user]); }
-      usertimeouts[query.user] = setTimeout (function activatebuffer () {
-        delete userbuffer[query.user];  // Forget about this guy. Not worth it.
+      // Timeout adjustments.
+      users[query.user].bufferhim = true;
+      if (users[query.user].timeout > 0) {
+        clearTimeout (users[query.user].timeout);
+      }
+      users[query.user].timeout = setTimeout (function activatebuffer () {
+        delete users[query.user];  // Forget about this guy. Not worth it.
       }, TimeoutBetweenDispatches);
 
       return resp;             // Send the modification to the client.

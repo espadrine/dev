@@ -5,6 +5,8 @@
  
 (function () {
 
+// We need all the power of diff, match and patch.
+var dmp = new diff_match_patch ();
 
 // Information we keep on the state of the content of the editor.
 window.client = {
@@ -29,20 +31,53 @@ window.editor = new CodeMirror(document.body, {
     } else {
       // Here, we consider the differences between current text
       // and the text we had last time we pushed changes.
-      var bufcopy = editor.getCode();
-      var mydelta = Diff.delta(dmp.diff_main(client.lastcopy, bufcopy));
-      client.lastcopy = bufcopy;
-      Scout.send (sending(mydelta)) (); ///FIXME: Is there no better way?
+
+      // Create the patch that we want to send to the wire.
+      var newdiff = dmp.diff_main (client.lastcopy, editor.getCode());
+      if (newdiff.length > 2) {
+        dmp.diff_cleanupSemantic (newdiff);
+        dmp.diff_cleanupEfficiency (newdiff);
+      }
+
+      // Send back the new diff if there is something to it.
+      if (newdiff.length !== 1 || newdiff[0][0] !== DIFF_EQUAL) {
+
+        // Update the last copy.
+        client.lastcopy = editor.getCode ();
+
+        // Send the new diff.
+        Scout.send (sending (unescape(dmp.diff_toDelta (newdiff)))) ();
+      }
     }
+  },
+  onLoad: function () {
+
+    // Get the data.
+    Scout.send (function (xhr, params) {
+      params.open.url = '/$data';
+      params.data.user = client.user;
+      params.resp = function (xhr, resp) {
+        console.log ('got content');
+
+        editor.setCode (resp.data);     // Put the data in the editor.
+
+        Scout2.send (getmodif) ();      // Make the first dispatch link.
+      };
+    }) ();
   }
 });
+
 
 window.extenditor = {
   applydelta : function(delta, editor) {
     // Modifying the code
     client.notmychange = true;
+    // Convert delta to our in-house representation.
+    var content = editor.getCode ();
+    delta = Diff.delta (dmp.diff_fromDelta (content, delta));
+    // Apply changes to the content.
     var car = 0;
-    var max = editor.getCode().length;
+    var max = content.length;
     var line = editor.firstLine();
     for(var i = 0 ; i < delta.length ; i++ ) {
       while(delta[i][2] > (car + editor.lineContent(line).length)) {
@@ -65,7 +100,6 @@ window.extenditor = {
 
 // -- HERE BE AJAX SPACE.
 
-var dmp = new diff_match_patch ();
 // We need this instance of scout to avoid conflicts.
 var Scout2 = Scout.maker ();
 
@@ -87,7 +121,35 @@ function getmodif (xhr, params) {
     console.log ('received rev : ' + resp.rev + 
                  ', delta : ' + JSON.stringify(resp.delta));
     
+
+    // Patch last copy.
+    // Note: dmp.patch_apply returns the resulting text in the first element
+    // of the array.
+    var lastcopypatch = dmp.patch_make (client.lastcopy,
+          dmp.diff_fromDelta (client.lastcopy, resp.delta));
+    client.lastcopy = dmp.patch_apply (lastcopypatch, client.lastcopy) [0];
+
+    // Patch working copy.
+    extenditor.applydelta (resp.delta, editor);  // TODO
+
+    // Create the patch that we want to send to the wire.
+    var newdiff = dmp.diff_main (client.lastcopy, editor.getCode ());
+    if (newdiff.length > 2) {
+      dmp.diff_cleanupSemantic (newdiff);
+      dmp.diff_cleanupEfficiency (newdiff);
+    }
+
+    // Send back the new diff if there is something to it.
+    if (newdiff.length !== 1 || newdiff[0][0] !== DIFF_EQUAL) {
+
+      // Update the last copy.
+      client.lastcopy = editor.getCode ();
+
+      // Send the new diff.
+      Scout.send (sending (unescape(dmp.diff_toDelta (newdiff)))) ();
+    }
     
+    /*
     // Let's see what modifications we made to our copy.
     var diff = dmp.diff_main (client.lastcopy, editor.getCode ());
     var mydelta = Diff.delta (diff);
@@ -113,6 +175,7 @@ function getmodif (xhr, params) {
     }
 
     client.lastcopy = editor.getCode ();  // Those modifs were not made by us.
+    */
     
     Scout2.send (getmodif) ();   // We relaunch the connection.
   };
@@ -122,13 +185,6 @@ function getmodif (xhr, params) {
   };
 
 }
-
-// Let's start the connection when the page loads.
-if (!window.addEventListener) {
-  window.addEventListener = function ael (e,f) { window.attachEvent('on'+e,f); }
-}
-window.addEventListener ('load', Scout2.send (getmodif), false);
-
 
 
 //2. This place is specifically designed to send information to the server.
