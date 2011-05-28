@@ -181,7 +181,7 @@ function getmodif (xhr, params) {
   };
 
   params.error = function receiveerror(xhr, status) {
-    // TODO
+    console.log('receive error: '+JSON.stringify(status));
   };
 
 }
@@ -213,7 +213,7 @@ var sending = function (delta) {
     };
     
     params.error = function senderror (xhr, status) {
-      // TODO
+      console.log('send error: '+JSON.stringify(status));
     };
 
   };
