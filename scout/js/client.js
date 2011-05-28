@@ -182,7 +182,8 @@ function getmodif (xhr, params) {
   };
 
   params.error = function receiveerror(xhr, status) {
-    console.log('receive error: '+JSON.stringify(status));
+    console.log('getmodif xhr error: status '+status);
+    Scout2.send (getmodif) ();   // We relaunch the connection.
   };
 
 }
