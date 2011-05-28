@@ -182,7 +182,8 @@ function getmodif (xhr, params) {
   };
 
   params.error = function receiveerror(xhr, status) {
-    console.log('getmodif xhr error: status '+status);
+    console.log('getmodif xhr error: status',status);
+    Scout2 = Scout.maker();
     Scout2.send (getmodif) ();   // We relaunch the connection.
   };
 
@@ -215,7 +216,7 @@ var sending = function (delta) {
     };
     
     params.error = function senderror (xhr, status) {
-      console.log('send error: '+JSON.stringify(status));
+      console.log('send error: status',JSON.stringify(status));
     };
 
   };
