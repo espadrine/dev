@@ -18,7 +18,7 @@ window.client = {
 };
 
 // Information we keep on code mirror.
-window.editor = new CodeMirror(document.body, {
+window.editor = new CodeMirror (document.body, {
   content: window.client.lastcopy,
   height: "100%",
   width: "50%",
@@ -59,6 +59,7 @@ window.editor = new CodeMirror(document.body, {
       params.resp = function (xhr, resp) {
         console.log ('got content');
 
+        client.notmychange = true;
         editor.setCode (resp.data);     // Put the data in the editor.
 
         Scout2.send (getmodif) ();      // Make the first dispatch link.
