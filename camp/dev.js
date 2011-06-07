@@ -10,46 +10,43 @@ var dmp = new DMP.diff_match_patch ();
 // Each user is identified by a number (might be converted to a string),
 // and has an associated lastcopy.
 //   eg, users = {'1234': {lastcopy: 'foo bar...',
-//                         buffer: [],       // To be sent on dispatch.
 //                         bufferhim: false, // To see if we need to buffer.
-//                         timeout: 0}}      // Before we forget this user.
+//                         buffer: [],       // To be sent on dispatch.
+//                         timeout: 0,       // Before we forget this user.
+//                         lock: false},     // To forbid simultaneous edits.
+//                lockcache: []}}            // To cache edits shadowed by lock.
 var users = {};
+users.lockcache = [];
 
 // Update the copy corresponding to a user, because of user input.
-var sync = function (resp) {
-  var username = resp.user;
-  var client = users[username];
-
+//
+function sync (client, delta, workingcopy, applylocally, send) {
 
   // Patch last copy.
   // Note: dmp.patch_apply returns the resulting text in the first element
   // of the array.
   var lastcopypatch = dmp.patch_make (client.lastcopy,
-        dmp.diff_fromDelta (client.lastcopy, resp.delta));
+        dmp.diff_fromDelta (client.lastcopy, delta));
   client.lastcopy = dmp.patch_apply (lastcopypatch, client.lastcopy) [0];
 
   // Patch working copy.
-  var copypatch = dmp.patch_make (COPY, dmp.diff_fromDelta (COPY, resp.delta));
-  COPY = dmp.patch_apply (copypatch, COPY) [0];
+  workingcopy = applylocally (delta);
 
   // Create the patch that we want to send to the wire.
-  var newdiff = dmp.diff_main (client.lastcopy, COPY);
+  var newdiff = dmp.diff_main (client.lastcopy, workingcopy);
   if (newdiff.length > 2) {
     dmp.diff_cleanupSemantic (newdiff);
     dmp.diff_cleanupEfficiency (newdiff);
   }
 
   // Update the last copy.
-  client.lastcopy = COPY;
+  client.lastcopy = workingcopy;
   
   // Send back the new diff if there is something to it.
   if (newdiff.length !== 1 || newdiff[0][0] !== DIFF_EQUAL) {
-
-
-    // Send the new diff. (after the function returns.)
+    send (unescape (dmp.diff_toDelta (newdiff)));    // Send the new delta.
   }
-    
-};  // function modif 
+}
 
 
 
@@ -69,23 +66,46 @@ var usertimeouts = {};
 Camp.add ('data', function (query) {
   users[query.user] = {
     lastcopy: COPY,
-    buffer: [],
     bufferhim: false,
-    timeout: 0
+    buffer: [],
+    timeout: 0,
+    lock: false
   };
   return {data: COPY? COPY: '\n'}; // If there is something to be sent, send it.
 });
 
 
 // We get information on the 'new' channel.
+// query = { user: 12345, delta: "=42+ =12" }
 
-Camp.add ('new', function (query) {
+Camp.add ('new', function addnewstuff (query) {
   console.log ('--receiving from', query.user, JSON.stringify (query.delta));///
+  
+  // Are you locked up?
+  if (users[query.user].lock) {
+    Camp.Server.once ('unlocked', function () {
+      // We just got the right to integrate our changes.
+      // We need to merge them with the change that blocked us first.
+      // TODO: implement OT fusion.
+      var lastquery = users.lockcache.shift ();
+      sync (users[lastquery.user], lastquery.delta);
+      // Now we can integrate the changes.
+      addnewstuff (lastquery);
+    });
+    users.lockcache.push (query);
+    return {};
+  }
+  // Lock every one else up: they must not do any 'new' action.
+  for (var user in users) {
+    users[user].lock = true;
+  }
+
   // Does the user already exist?
   if (!users[query.user]) {
     console.log ('--nonexisting user [' + query.user + ']');
     return {};
   }
+  
   // Caching for those in need.
   for (var user in users) {
     if (users[user].bufferhim && user != query.user) {
@@ -93,15 +113,30 @@ Camp.add ('new', function (query) {
       users[user].buffer.push (query);
     }
   }
-  sync (query);  // Change our COPY.
-  Camp.Server.emit ('modif', query);
+  // Change our copy.
+  sync (users[query.user], query.delta, COPY, function(delta) {
+    var copypatch = dmp.patch_make (COPY, dmp.diff_fromDelta (COPY, delta));
+    COPY = dmp.patch_apply (copypatch, COPY) [0];
+    return COPY;
+  }, function(delta) {
+    Camp.Server.emit ('modif', {user: query.user, delta: delta});
+  });
+
+  // Unlock everyone to allow input from them.
+  for (var user in users) {
+    users[user].lock = false;
+  }
+  Camp.Server.emit ('unlocked');
   return {};
 });
+
 
 // We send information on the 'dispatch' channel.
 
 Camp.add ('dispatch', function (query) {
   console.log ('--connect dispatch [' + query.user + ']');
+
+  // Return userbuffer if there was information to send while dispatch was off.
   var userbuffer = users[query.user].buffer;
   if (userbuffer.bufferhim && userbuffer.length > 0) {
     console.log ('--returning cached content to',query.user);

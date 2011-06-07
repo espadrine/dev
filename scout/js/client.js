@@ -107,6 +107,34 @@ var Scout2 = Scout.maker ();
 
 //1. This place is specifically designed to receive information from the server.
 
+function sync (client, delta, workingcopy, applylocally, send) {
+
+  // Patch last copy.
+  // Note: dmp.patch_apply returns the resulting text in the first element
+  // of the array.
+  var lastcopypatch = dmp.patch_make (client.lastcopy,
+        dmp.diff_fromDelta (client.lastcopy, delta));
+  client.lastcopy = dmp.patch_apply (lastcopypatch, client.lastcopy) [0];
+
+  // Patch working copy.
+  workingcopy = applylocally (delta);
+
+  // Create the patch that we want to send to the wire.
+  var newdiff = dmp.diff_main (client.lastcopy, workingcopy);
+  if (newdiff.length > 2) {
+    dmp.diff_cleanupSemantic (newdiff);
+    dmp.diff_cleanupEfficiency (newdiff);
+  }
+
+  // Update the last copy.
+  client.lastcopy = workingcopy;
+
+  // Send back the new diff if there is something to it.
+  if (newdiff.length !== 1 || newdiff[0][0] !== DIFF_EQUAL) {
+    send (unescape (dmp.diff_toDelta (newdiff)));    // Send the new delta.
+  }
+}
+
 // Whenever we load the page, we shall send nothing to
 // the "in" action of the server.
 function getmodif (xhr, params) {
@@ -122,79 +150,37 @@ function getmodif (xhr, params) {
     console.log ('received rev : ' + resp.rev + 
                  ', delta : ' + JSON.stringify(resp.delta));
     
-
-    // Patch last copy.
-    // Note: dmp.patch_apply returns the resulting text in the first element
-    // of the array.
-    var lastcopypatch = dmp.patch_make (client.lastcopy,
-          dmp.diff_fromDelta (client.lastcopy, resp.delta));
-    client.lastcopy = dmp.patch_apply (lastcopypatch, client.lastcopy) [0];
-
-    // Patch working copy.
-    extenditor.applydelta (resp.delta, editor);  // TODO
-
-    // Create the patch that we want to send to the wire.
-    var newdiff = dmp.diff_main (client.lastcopy, editor.getCode ());
-    if (newdiff.length > 2) {
-      dmp.diff_cleanupSemantic (newdiff);
-      dmp.diff_cleanupEfficiency (newdiff);
-    }
-
-    // Send back the new diff if there is something to it.
-    if (newdiff.length !== 1 || newdiff[0][0] !== DIFF_EQUAL) {
-
-      // Update the last copy.
-      client.lastcopy = editor.getCode ();
-
-      // Send the new diff.
-      Scout.send (sending (unescape(dmp.diff_toDelta (newdiff)))) ();
-    }
-    
-    /*
-    // Let's see what modifications we made to our copy.
-    var diff = dmp.diff_main (client.lastcopy, editor.getCode ());
-    var mydelta = Diff.delta (diff);
-
-    if (mydelta.length > 0) {
-      // We did have a couple modifications.
-      console.log ('We did have a couple modifications.');
-
-      client.lastcopy = editor.getCode ();
-
-      client.delta = Diff.solve (mydelta, resp.delta);
-      extenditor.applydelta (resp.delta, editor);
-
-      // Commit the new revision.
-      Scout.send (sending (mydelta)) ();
-
-      client.rev = resp.rev;    // There need be a new revision.
-
-
-    } else {
-      client.rev = resp.rev;
-      extenditor.applydelta (resp.delta, editor);
-    }
-
-    client.lastcopy = editor.getCode ();  // Those modifs were not made by us.
-    */
+    sync (client, resp.delta, editor.getCode (), function applylocally (delta) {
+      extenditor.applydelta (delta, editor);
+      return editor.getCode ();
+    }, function sendnewdelta (delta) {
+      Scout.send (sending (delta)) ();
+    });
     
     Scout2.send (getmodif) ();   // We relaunch the connection.
   };
 
   params.error = function receiveerror(xhr, status) {
     console.log('getmodif xhr error: status',status);
-    Scout2 = Scout.maker();
-    Scout2.send (getmodif) ();   // We relaunch the connection.
+    var now = +new Date ();
+    if (status === 0 && now - lastnetworkissue > 5000) {
+      // Network issues are not too frequent.
+      lastnetworkissue = now;
+      Scout2 = Scout.maker();
+      Scout2.send (getmodif) ();   // We relaunch the connection.
+    } else {
+      console.log ('connection lost.');
+    }
   };
-
 }
+var lastnetworkissue = 0;
 
 
 //2. This place is specifically designed to send information to the server.
 
 
 // We want to listen to the event of code modification.
-var sending = function (delta) {
+function sending (delta) {
   return function (xhr, params) {
 
     // If there was no modification, we do not do anything.
@@ -220,7 +206,7 @@ var sending = function (delta) {
     };
 
   };
-};
+}
 
 
 // The end.
