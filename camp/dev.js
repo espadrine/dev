@@ -44,6 +44,7 @@ function sync (client, delta, workingcopy, applylocally, send) {
   
   // Send back the new diff if there is something to it.
   if (newdiff.length !== 1 || newdiff[0][0] !== DIFF_EQUAL) {
+    console.log ('--sync not equal');
     send (unescape (dmp.diff_toDelta (newdiff)));    // Send the new delta.
   }
 }
@@ -83,7 +84,9 @@ Camp.add ('new', function addnewstuff (query) {
   
   // Are you locked up?
   if (users[query.user].lock) {
+    console.log ('--user [' + query.user + '] is locked up.');
     Camp.Server.once ('unlocked', function () {
+      console.log ('--unlocking [' + query.user + ']');
       // We just got the right to integrate our changes.
       // We need to merge them with the change that blocked us first.
       // TODO: implement OT fusion.
@@ -114,13 +117,17 @@ Camp.add ('new', function addnewstuff (query) {
     }
   }
   // Change our copy.
+  console.log ('--sync', query.delta);
+  var newdelta = query.delta;
   sync (users[query.user], query.delta, COPY, function(delta) {
     var copypatch = dmp.patch_make (COPY, dmp.diff_fromDelta (COPY, delta));
     COPY = dmp.patch_apply (copypatch, COPY) [0];
     return COPY;
   }, function(delta) {
-    Camp.Server.emit ('modif', {user: query.user, delta: delta});
+    newdelta = delta;
   });
+  var newresp = {user: query.user, delta: newdelta};
+  Camp.Server.emit ('modif', newresp);
 
   // Unlock everyone to allow input from them.
   for (var user in users) {

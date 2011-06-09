@@ -5,6 +5,15 @@
  
 (function () {
 
+// IE doesn't have a console, but we avoid a crash thanks to this.
+window.console = console? console: {
+  log: function(){
+    for (var arg in arguments)
+      console.data = (console.data?console.data:'') + arg + ' ';
+    console.data += '\n';
+  }
+} 
+
 // We need all the power of diff, match and patch.
 var dmp = new diff_match_patch ();
 
