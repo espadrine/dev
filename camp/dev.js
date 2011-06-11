@@ -70,6 +70,9 @@ Camp.add ('data', function (query) {
   return {data: COPY? COPY: '\n'}; // If there is something to be sent, send it.
 });
 
+// Remove a user.
+Camp.add ('kill', function (query) { delete users[query.user]; });
+
 
 // We get information on the 'new' channel.
 // query = { user: 12345, delta: "=42+ =12", rev: 1 }

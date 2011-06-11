@@ -77,6 +77,14 @@ window.editor = new CodeMirror (document.body, {
   }
 });
 
+// When we leave, tell them.
+window.onunload = function () {
+  Scout.send (function (xhr, params) {
+    params.open.url = '/$kill';
+    params.data.user = client.user;
+  }) ();
+};
+
 
 window.extenditor = {
   applypatch : function(patch, editor) {
