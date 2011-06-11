@@ -12,11 +12,8 @@ var dmp = new DMP.diff_match_patch ();
 //   eg, users = {'1234': {lastcopy: 'foo bar...',
 //                         bufferhim: false, // To see if we need to buffer.
 //                         buffer: [],       // To be sent on dispatch.
-//                         timeout: 0,       // Before we forget this user.
-//                         lock: false},     // To forbid simultaneous edits.
-//                lockcache: []}}            // To cache edits shadowed by lock.
+//                         timeout: 0}}     // Before we forget this user.
 var users = {};
-users.lockcache = [];
 
 // Update the copy corresponding to a user, because of user input.
 //
@@ -25,12 +22,12 @@ function sync (client, delta, workingcopy, applylocally, send) {
   // Patch last copy.
   // Note: dmp.patch_apply returns the resulting text in the first element
   // of the array.
-  var lastcopypatch = dmp.patch_make (client.lastcopy,
-        dmp.diff_fromDelta (client.lastcopy, delta));
+  var lastcopydiff = dmp.diff_fromDelta (client.lastcopy, delta);
+  var lastcopypatch = dmp.patch_make (client.lastcopy, lastcopydiff);
   client.lastcopy = dmp.patch_apply (lastcopypatch, client.lastcopy) [0];
 
   // Patch working copy.
-  workingcopy = applylocally (delta);
+  workingcopy = applylocally (lastcopypatch);
 
   // Create the patch that we want to send to the wire.
   var newdiff = dmp.diff_main (client.lastcopy, workingcopy);
@@ -44,7 +41,6 @@ function sync (client, delta, workingcopy, applylocally, send) {
   
   // Send back the new diff if there is something to it.
   if (newdiff.length !== 1 || newdiff[0][0] !== DIFF_EQUAL) {
-    console.log ('--sync not equal');
     send (unescape (dmp.diff_toDelta (newdiff)));    // Send the new delta.
   }
 }
@@ -69,40 +65,18 @@ Camp.add ('data', function (query) {
     lastcopy: COPY,
     bufferhim: false,
     buffer: [],
-    timeout: 0,
-    lock: false
+    timeout: 0
   };
   return {data: COPY? COPY: '\n'}; // If there is something to be sent, send it.
 });
 
 
 // We get information on the 'new' channel.
-// query = { user: 12345, delta: "=42+ =12" }
+// query = { user: 12345, delta: "=42+ =12", rev: 1 }
 
 Camp.add ('new', function addnewstuff (query) {
   console.log ('--receiving from', query.user, JSON.stringify (query.delta));///
   
-  // Are you locked up?
-  if (users[query.user].lock) {
-    console.log ('--user [' + query.user + '] is locked up.');
-    Camp.Server.once ('unlocked', function () {
-      console.log ('--unlocking [' + query.user + ']');
-      // We just got the right to integrate our changes.
-      // We need to merge them with the change that blocked us first.
-      // TODO: implement OT fusion.
-      var lastquery = users.lockcache.shift ();
-      sync (users[lastquery.user], lastquery.delta);
-      // Now we can integrate the changes.
-      addnewstuff (lastquery);
-    });
-    users.lockcache.push (query);
-    return {};
-  }
-  // Lock every one else up: they must not do any 'new' action.
-  for (var user in users) {
-    users[user].lock = true;
-  }
-
   // Does the user already exist?
   if (!users[query.user]) {
     console.log ('--nonexisting user [' + query.user + ']');
@@ -119,21 +93,14 @@ Camp.add ('new', function addnewstuff (query) {
   // Change our copy.
   console.log ('--sync', query.delta);
   var newdelta = query.delta;
-  sync (users[query.user], query.delta, COPY, function(delta) {
-    var copypatch = dmp.patch_make (COPY, dmp.diff_fromDelta (COPY, delta));
-    COPY = dmp.patch_apply (copypatch, COPY) [0];
-    return COPY;
+  sync (users[query.user], query.delta, COPY, function(patch) {
+    return COPY = dmp.patch_apply (patch, COPY) [0];
   }, function(delta) {
     newdelta = delta;
   });
-  var newresp = {user: query.user, delta: newdelta};
+  var newresp = {user: query.user, delta: newdelta, rev: query.rev};
   Camp.Server.emit ('modif', newresp);
 
-  // Unlock everyone to allow input from them.
-  for (var user in users) {
-    users[user].lock = false;
-  }
-  Camp.Server.emit ('unlocked');
   return {};
 });
 

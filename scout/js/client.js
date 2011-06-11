@@ -23,7 +23,7 @@ window.client = {
   rev: 0,
   lastcopy: "<!doctype html>\n<title><\/title>\n\n<body>\n  <canvas id=tutorial width=150 height=150><\/canvas>\n\n  <script>\n    var canvas = document.getElementById('tutorial');\n    var context = canvas.getContext('2d');\n\n    context.fillStyle = 'rgb(250,0,0)';\n    context.fillRect(10, 10, 55, 50);\n\n    context.fillStyle = 'rgba(0, 0, 250, 0.5)';\n    context.fillRect(30, 30, 55, 50);\n  <\/script>\n<\/body>",
   delta: [],
-  notmychange: false
+  notmychange: false           // true when a program modifies the content.
 };
 
 // Information we keep on code mirror.
@@ -79,12 +79,14 @@ window.editor = new CodeMirror (document.body, {
 
 
 window.extenditor = {
-  applydelta : function(delta, editor) {
-    // Modifying the code
-    client.notmychange = true;
-    // Convert delta to our in-house representation.
+  applypatch : function(patch, editor) {
     var content = editor.getCode ();
-    delta = Diff.delta (dmp.diff_fromDelta (content, delta));
+    // Get what our content should look like after this function runs.
+    var futurecontent = dmp.patch_apply (patch, content) [0];
+    // Figure out the difference w.r.t our working copy.
+    var change = dmp.diff_main (content, futurecontent);
+    var delta = Diff.delta (change);
+
     // Apply changes to the content.
     var car = 0;
     var max = content.length;
@@ -92,7 +94,7 @@ window.extenditor = {
     for(var i = 0 ; i < delta.length ; i++ ) {
       while(delta[i][2] > (car + editor.lineContent(line).length)) {
         car += editor.lineContent(line).length + 1;
-      line = editor.nextLine(line);
+        line = editor.nextLine(line);
       }
       var pos = (delta[i][2] - car < max ? delta[i][2] - car : "end" );
       if(delta[i][0] == 1) {
@@ -121,12 +123,12 @@ function sync (client, delta, workingcopy, applylocally, send) {
   // Patch last copy.
   // Note: dmp.patch_apply returns the resulting text in the first element
   // of the array.
-  var lastcopypatch = dmp.patch_make (client.lastcopy,
-        dmp.diff_fromDelta (client.lastcopy, delta));
+  var lastcopydiff = dmp.diff_fromDelta (client.lastcopy, delta);
+  var lastcopypatch = dmp.patch_make (client.lastcopy, lastcopydiff);
   client.lastcopy = dmp.patch_apply (lastcopypatch, client.lastcopy) [0];
 
   // Patch working copy.
-  workingcopy = applylocally (delta);
+  workingcopy = applylocally (lastcopypatch);
 
   // Create the patch that we want to send to the wire.
   var newdiff = dmp.diff_main (client.lastcopy, workingcopy);
@@ -137,7 +139,7 @@ function sync (client, delta, workingcopy, applylocally, send) {
 
   // Update the last copy.
   client.lastcopy = workingcopy;
-
+  
   // Send back the new diff if there is something to it.
   if (newdiff.length !== 1 || newdiff[0][0] !== DIFF_EQUAL) {
     send (unescape (dmp.diff_toDelta (newdiff)));    // Send the new delta.
@@ -159,8 +161,11 @@ function getmodif (xhr, params) {
     console.log ('received rev : ' + resp.rev + 
                  ', delta : ' + JSON.stringify(resp.delta));
     
-    sync (client, resp.delta, editor.getCode (), function applylocally (delta) {
-      extenditor.applydelta (delta, editor);
+    // We sync it to our copy.
+    sync (client, resp.delta, editor.getCode (), function applylocally(patch) {
+      // Modifying the content.
+      client.notmychange = true;
+      extenditor.applypatch (patch, editor);
       return editor.getCode ();
     }, function sendnewdelta (delta) {
       Scout.send (sending (delta)) ();
