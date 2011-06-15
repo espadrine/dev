@@ -3,63 +3,67 @@ dev is live! http://localhost/
 validated /index.html
 /css/codemirror.css
 validated /css/codemirror.css
-/css/default.css
-validated /css/default.css
-/js/scout.js
-validated /js/scout.js
-/js/javascript.js
-validated /js/javascript.js
-/js/xml.js
-validated /js/xml.js
 /js/codemirror.js
 validated /js/codemirror.js
 /js/diff_match_patch.js
 validated /js/diff_match_patch.js
-/js/htmlmixed.js
-validated /js/htmlmixed.js
-/js/css.js
-validated /js/css.js
-/js/client.js
-validated /js/client.js
-/favicon.ico
-validated /favicon.ico
-/
-validated /index.html
-/css/codemirror.css
-validated /css/codemirror.css
 /css/default.css
 validated /css/default.css
-/js/scout.js
-validated /js/scout.js
-/js/htmlmixed.js
-validated /js/htmlmixed.js
 /js/css.js
 validated /js/css.js
-/js/javascript.js
-validated /js/javascript.js
-/js/xml.js
-validated /js/xml.js
-/js/codemirror.js
-validated /js/codemirror.js
-/js/diff_match_patch.js
-validated /js/diff_match_patch.js
+/js/scout.js
+validated /js/scout.js
 /js/client.js
 validated /js/client.js
+/js/xml.js
+validated /js/xml.js
+/js/htmlmixed.js
+validated /js/htmlmixed.js
+/js/javascript.js
+validated /js/javascript.js
 /favicon.ico
 validated /favicon.ico
 /$new
 validated action /$new
---receiving from 1308090626776 "=93\t+  \t=294"
---nonexisting user [1308090626776]
+--receiving from 1308162907646 "=93\t+  \t=294"
+--nonexisting user [1308162907646]
 /$new
 validated action /$new
---receiving from 1308090626776 "=95\t+<\t=294"
---nonexisting user [1308090626776]
+--receiving from 1308162907646 "=95\t+<\t=294"
+--nonexisting user [1308162907646]
 /$new
 validated action /$new
---receiving from 1308090626776 "=96\t+p\t=294"
---nonexisting user [1308090626776]
+--receiving from 1308162907646 "=96\t+p\t=294"
+--nonexisting user [1308162907646]
 /$new
 validated action /$new
---receiving from 1308090626776 "=97\t+>\t=294"
---nonexisting user [1308090626776]
+--receiving from 1308162907646 "=97\t+>\t=294"
+--nonexisting user [1308162907646]
+/$new
+validated action /$new
+--receiving from 1308162907646 "=98\t+l\t=294"
+--nonexisting user [1308162907646]
+/$new
+validated action /$new
+--receiving from 1308162907646 "=99\t+o\t=294"
+--nonexisting user [1308162907646]
+/$new
+validated action /$new
+--receiving from 1308162907646 "=100\t+l\t=294"
+--nonexisting user [1308162907646]
+/$new
+validated action /$new
+--receiving from 1308162907646 "=101\t+<\t=294"
+--nonexisting user [1308162907646]
+/$new
+validated action /$new
+--receiving from 1308162907646 "=102\t+/\t=294"
+--nonexisting user [1308162907646]
+/$new
+validated action /$new
+--receiving from 1308162907646 "=103\t+p\t=294"
+--nonexisting user [1308162907646]
+/$new
+validated action /$new
+--receiving from 1308162907646 "=104\t+>\t=294"
+--nonexisting user [1308162907646]
