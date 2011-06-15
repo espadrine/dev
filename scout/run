@@ -1,7 +1,0 @@
-#!/bin/bash
-PID=$(ps aux | grep node | awk '/dev\.js/ { print $2 }')
-if [ $PID ]
-then
-  sudo kill "$PID" 
-fi
-sudo node ../camp/dev.js

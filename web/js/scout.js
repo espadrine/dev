@@ -1681,7 +1681,7 @@ if (!this.JSON) {
 
 /* The main fun starts here. */
 var Scout = function(){};
-Scout = (function () {
+Scout = (function Scoutmaker () {
   
   /* xhr is a closure. */
   var xhr;
@@ -1703,12 +1703,10 @@ Scout = (function () {
   
   var params = {
     data: {},
-    open: {
-      method: 'POST',
-      url: './prog'
-    },
+    open: { method: 'POST' },
     resp: function (xhr, resp) {},
-    error: function (xhr, status) {}
+    error: function (xhr, status) {},
+    partial: function (xhr, raw, resp) {}
   };
 
   /* Convert object literal to xhr-sendable. */
@@ -1727,16 +1725,28 @@ Scout = (function () {
     
   var sendxhr = function (target, params) {
     /* XHR stuff now. */
-    if (xhr.open.url) {
+    if (params.open.url) {
       /* We have somewhere to go to. */
       xhr.onreadystatechange = function () {
-        if (xhr.readyState === 4) {
-          if (xhr.status === 200) {
-            var resp = JSON.parse(xhr.responseText);
-            params.resp.apply(target, [xhr, resp]);
-          } else {
-            params.error.apply(target, [xhr, xhr.status]);
-          }
+        switch (xhr.readyState) {
+          case 3:
+            if (params.partial === undefined) {
+              var raw = xhr.responseText;
+              var resp;
+              try {
+                resp = JSON.parse(raw);
+              } catch (e) {}
+              params.partial.apply(target, [xhr, raw, resp]);
+            }
+            break;
+          case 4:
+            if (xhr.status === 200) {
+              var resp = JSON.parse(xhr.responseText);
+              params.resp.apply(target, [xhr, resp]);
+            } else {
+              params.error.apply(target, [xhr, xhr.status]);
+            }
+            break;
         }
       };
       xhr.open(params.open.method,
@@ -1809,6 +1819,7 @@ Scout = (function () {
       sendxhr(undefined, params);
     };
   };
+  ret.maker = Scoutmaker;
   
   return ret;
 })();
