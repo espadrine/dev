@@ -55,7 +55,8 @@ window.editor = new CodeMirror (document.body, {
         client.lastcopy = editor.getCode ();
 
         // Send the new diff.
-        Scout.send (sending (unescape(dmp.diff_toDelta (newdiff)))) ();
+        Scout.send (sending (decodeURI(dmp.diff_toDelta (newdiff))
+              .replace ('%','%25'))) ();
       }
     }
   },
@@ -150,7 +151,8 @@ function sync (client, delta, workingcopy, applylocally, send) {
   
   // Send back the new diff if there is something to it.
   if (newdiff.length !== 1 || newdiff[0][0] !== DIFF_EQUAL) {
-    send (unescape (dmp.diff_toDelta (newdiff)));    // Send the new delta.
+    // Send the new delta.
+    send (decodeURI (dmp.diff_toDelta (newdiff)).replace('%','%25'));
   }
 }
 
