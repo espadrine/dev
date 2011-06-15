@@ -10,7 +10,7 @@ MIN = min
 build : clean deploy minify
 
 clean :
-	rm -rf $(SOURCE)/*
+	rm -rf $(TARGET)/*
 
 deploy :
 	cp -r $(SOURCE)/* $(TARGET)
