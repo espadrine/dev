@@ -16,7 +16,7 @@ deploy :
 	cp -r $(SOURCE)/* $(TARGET)
 	
 minify :
-	for file in `find web -name '*\.js'` ; do cat "$${file}" | $(JSMIN) > "$${file}$(MIN)" ; mv "$${file}$(MIN)" "$${file}" ; done
+	for file in `find $(TARGET) -name '*\.js'` ; do cat "$${file}" | $(JSMIN) > "$${file}$(MIN)" ; mv "$${file}$(MIN)" "$${file}" ; done
 
 test :
 	cd $(SOURCE) ; sudo node ../$(SERVER)
