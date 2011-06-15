@@ -14,11 +14,10 @@
 
   <iframe id=preview class=right></iframe>
   <script>
-// The following code makes the preceding iframe reflect the state
-// of the code you write.
+  // Regularily inject the code into an iframe for preview.
   setInterval (function() {
     var preview = document.getElementById ('preview').contentDocument;
-    preview.open ();
+    //preview.open ();
     preview.write (editor.getValue ());
     preview.close ();
   }, 500);

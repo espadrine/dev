@@ -1,21 +1,22 @@
-# makefile: build and deploy from source/ to web/, start/stop the server.
+# makefile: build and deploy from web/ to publish/, start/stop the server.
 # Copyright (c) 2011 Jan Keromnes & Yann Tyl. All rights reserved.
 
 SERVER = server.js
-SOURCE = source
-TARGET = web
+TARGET = publish
+SOURCE = web
+JSMIN = jsmin
 MIN = min
 
 build : clean deploy minify
 
 clean :
-	rm -rf web/*
+	rm -rf $(SOURCE)/*
 
 deploy :
 	cp -r $(SOURCE)/* $(TARGET)
 	
 minify :
-	for file in `find web -name '*\.js'` ; do cat "$${file}" | jsmin > "$${file}$(MIN)" ; mv "$${file}$(MIN)" "$${file}" ; done
+	for file in `find web -name '*\.js'` ; do cat "$${file}" | $(JSMIN) > "$${file}$(MIN)" ; mv "$${file}$(MIN)" "$${file}" ; done
 
 test :
 	cd $(SOURCE) ; sudo node ../$(SERVER)
