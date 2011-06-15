@@ -1,9 +1,9 @@
-/* devvy.js: nodejs config file.
- * Copyright (c) Thaddee Tyl. All rights reserved. */
+/* server.js: run this with Node.js in the web/ folder to start your server
+ * Copyright (c) 2011 Jan Keromnes & Yann Tyl. All rights reserved. */
 
 var COPY = "<!doctype html>\n<title><\/title>\n\n<body>\n  <canvas id=tutorial width=150 height=150><\/canvas>\n\n  <script>\n    var canvas = document.getElementById('tutorial');\n    var context = canvas.getContext('2d');\n\n    context.fillStyle = 'rgb(250,0,0)';\n    context.fillRect(10, 10, 55, 50);\n\n    context.fillStyle = 'rgba(0, 0, 250, 0.5)';\n    context.fillRect(30, 30, 55, 50);\n  <\/script>\n<\/body>";
 
-var DMP = require ('./diff.js');
+var DMP = require ('./lib/diff_match_patch.js');
 var DIFF_EQUAL = DMP.DIFF_EQUAL;
 var dmp = new DMP.diff_match_patch ();
 
@@ -49,7 +49,7 @@ function sync (client, delta, workingcopy, applylocally, send) {
 
 /* Lauching the server. */
 
-var Camp = require ('./camp.js');
+var Camp = require ('./lib/camp.js');
 
 
 // Buffer of modifications.

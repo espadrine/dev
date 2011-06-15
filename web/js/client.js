@@ -1,6 +1,5 @@
 /* client.js: manages the client-side of the collaborative editor
- * Copyright (c) 2011 Thaddee Tyl. All rights reserved.
- * Copyright (c) 2011 Jan Keromnes. All rights reserved.
+ * Copyright (c) 2011 Thaddee Tyl & Jan Keromnes. All rights reserved.
  * */
  
 (function () {
@@ -28,12 +27,11 @@ window.client = {
 
 // Information we keep on code mirror.
 window.editor = new CodeMirror (document.body, {
-  content: window.client.lastcopy,
+  value: window.client.lastcopy,
   height: "100%",
   width: "50%",
-  parserfile: ["parsexml.js", "parsecss.js", "tokenizejavascript.js", "parsejavascript.js", "parsehtmlmixed.js"],
-  stylesheet: ["css/xmlcolors.css", "css/jscolors.css", "css/csscolors.css"],
-  path: "js/",
+  mode: "text/html",
+  tabMode: "indent",
   onChange: function () {
     if (client.notmychange) {
       client.notmychange = false;
@@ -42,7 +40,7 @@ window.editor = new CodeMirror (document.body, {
       // and the text we had last time we pushed changes.
 
       // Create the patch that we want to send to the wire.
-      var newdiff = dmp.diff_main (client.lastcopy, editor.getCode());
+      var newdiff = dmp.diff_main (client.lastcopy, editor.getValue());
       if (newdiff.length > 2) {
         dmp.diff_cleanupSemantic (newdiff);
         dmp.diff_cleanupEfficiency (newdiff);
@@ -52,7 +50,7 @@ window.editor = new CodeMirror (document.body, {
       if (newdiff.length !== 1 || newdiff[0][0] !== DIFF_EQUAL) {
 
         // Update the last copy.
-        client.lastcopy = editor.getCode ();
+        client.lastcopy = editor.getValue ();
 
         // Send the new diff.
         Scout.send (sending (decodeURI(dmp.diff_toDelta (newdiff))
@@ -60,25 +58,25 @@ window.editor = new CodeMirror (document.body, {
       }
     }
   },
-  onLoad: function () {
-
-    // Get the data.
-    Scout.send (function (xhr, params) {
-      params.open.url = '/$data';
-      params.data.user = client.user;
-      params.resp = function (xhr, resp) {
-        console.log ('got content');
-
-        client.notmychange = true;
-        editor.setCode (resp.data);     // Put the data in the editor.
-
-        Scout2.send (getmodif) ();      // Make the first dispatch link.
-      };
-    }) ();
-  }
 });
 
-// When we leave, tell them.
+// Get the data.
+// WARNING: If there's a delay with codemirror, this might cause a problem.
+// Best is to place this call in an onLoad function.
+Scout.send (function (xhr, params) {
+  params.open.url = '/$data';
+  params.data.user = client.user;
+  params.resp = function (xhr, resp) {
+    console.log ('got content');
+
+    client.notmychange = true;
+    editor.setValue (resp.data);     // Put the data in the editor.
+
+    Scout2.send (getmodif) ();      // Make the first dispatch link.
+  };
+}) ();
+
+// When we leave, tell the server.
 window.onunload = function () {
   Scout.send (function (xhr, params) {
     params.open.url = '/$kill';
@@ -89,7 +87,7 @@ window.onunload = function () {
 
 window.extenditor = {
   applypatch : function(patch, editor) {
-    var content = editor.getCode ();
+    var content = editor.getValue ();
     // Get what our content should look like after this function runs.
     var futurecontent = dmp.patch_apply (patch, content) [0];
     // Figure out the difference w.r.t our working copy.
@@ -172,11 +170,11 @@ function getmodif (xhr, params) {
                  ', delta : ' + JSON.stringify(resp.delta));
     
     // We sync it to our copy.
-    sync (client, resp.delta, editor.getCode (), function applylocally(patch) {
+    sync (client, resp.delta, editor.getValue (), function applylocally(patch) {
       // Modifying the content.
       client.notmychange = true;
       extenditor.applypatch (patch, editor);
-      return editor.getCode ();
+      return editor.getValue ();
     }, function sendnewdelta (delta) {
       Scout.send (sending (delta)) ();
     });
@@ -219,8 +217,7 @@ function sending (delta) {
     params.open.url = '/$new';
     
     // DEBUG
-    console.log ('sending rev : ' + params.data.rev +
-                 ', delta : ' + JSON.stringify (params.data.delta));
+    console.log('sending: ' + JSON.stringify(params.data));
     params.resp = function () {
       console.log ('sent');
     };
