@@ -125,6 +125,11 @@ var Scout2 = Scout.maker ();
 
 //1. This place is specifically designed to receive information from the server.
 
+// client: { lastcopy: 'content before last sync' }
+// delta: patch (in delta form) to apply to our copy.
+// workingcopy: content of our copy, as a string.
+// applylocally: function ( patch ) { return newWorkingCopy; }
+// send: function ( delta ) { }
 function sync (client, delta, workingcopy, applylocally, send) {
 
   // Patch last copy.
