@@ -1,129 +1,84 @@
-/* client.js: manages the client-side of the collaborative editor
+/* plugger.js: allows plugs to have an api into the nifty collaboration engine.
  * Copyright (c) 2011 Thaddee Tyl & Jan Keromnes. All rights reserved.
  * */
  
 (function () {
 
+
+var debug = true;
 // IE doesn't have a console, but we avoid a crash thanks to this.
-window.console = console? console: {
+var console = (console && debug)? console: {
   log: function(){
     for (var arg in arguments)
       console.data = (console.data?console.data:'') + arg + ' ';
     console.data += '\n';
   }
-} 
+};
+
 
 // We need all the power of diff, match and patch.
 var dmp = new diff_match_patch ();
+
+
+
+///  Application Programming Interface.
+//
+
+
 
 // Information we keep on the state of the content of the editor.
 window.client = {
   user: +(new Date()),
   rev: 0,
-  lastcopy: "<!doctype html>\n<title><\/title>\n\n<body>\n  <canvas id=tutorial width=150 height=150><\/canvas>\n\n  <script>\n    var canvas = document.getElementById('tutorial');\n    var context = canvas.getContext('2d');\n\n    context.fillStyle = 'rgb(250,0,0)';\n    context.fillRect(10, 10, 55, 50);\n\n    context.fillStyle = 'rgba(0, 0, 250, 0.5)';\n    context.fillRect(30, 30, 55, 50);\n  <\/script>\n<\/body>",
-  delta: [],
-  notmychange: false           // true when a program modifies the content.
+  copy: '',
+  lastcopy: ''
 };
 
-// Information we keep on code mirror.
-window.editor = new CodeMirror (document.body, {
-  value: window.client.lastcopy,
-  height: "100%",
-  width: "50%",
-  mode: "text/html",
-  tabMode: "indent",
-  onChange: function () {
-    if (client.notmychange) {
-      client.notmychange = false;
-    } else {
-      // Here, we consider the differences between current text
-      // and the text we had last time we pushed changes.
 
-      // Create the patch that we want to send to the wire.
-      var newdiff = dmp.diff_main (client.lastcopy, editor.getValue());
-      if (newdiff.length > 2) {
-        dmp.diff_cleanupSemantic (newdiff);
-        dmp.diff_cleanupEfficiency (newdiff);
-      }
+var plug = {
+  newcontent: function (content) {
+    // Here, we consider the differences between current text
+    // and the text we had last time we pushed changes.
 
-      // Send back the new diff if there is something to it.
-      if (newdiff.length !== 1 || newdiff[0][0] !== DIFF_EQUAL) {
-
-        // Update the last copy.
-        client.lastcopy = editor.getValue ();
-
-        // Send the new diff.
-        Scout.send (sending (decodeURI(dmp.diff_toDelta (newdiff))
-              .replace ('%','%25'))) ();
-      }
+    // Create the patch that we want to send to the wire.
+    var newdiff = dmp.diff_main (client.lastcopy, content);
+    if (newdiff.length > 2) {
+      dmp.diff_cleanupSemantic (newdiff);
+      dmp.diff_cleanupEfficiency (newdiff);
     }
-  },
-});
 
-// Get the data.
-// WARNING: If there's a delay with codemirror, this might cause a problem.
-// Best is to place this call in an onLoad function.
-Scout.send (function (xhr, params) {
-  params.open.url = '/$data';
-  params.data.user = client.user;
-  params.resp = function (xhr, resp) {
-    console.log ('got content');
+    // Send back the new diff if there is something to it.
+    if (newdiff.length !== 1 || newdiff[0][0] !== DIFF_EQUAL) {
 
-    client.notmychange = true;
-    editor.setValue (resp.data);     // Put the data in the editor.
+      // Update the last copy.
+      client.lastcopy = content;
 
-    Scout2.send (getmodif) ();      // Make the first dispatch link.
-  };
-}) ();
-
-// When we leave, tell the server.
-window.onunload = function () {
-  Scout.send (function (xhr, params) {
-    params.open.url = '/$kill';
-    params.data.user = client.user;
-  }) ();
-};
-
-
-window.extenditor = {
-  applypatch : function(patch, editor) {
-    var content = editor.getValue ();
-    // Get what our content should look like after this function runs.
-    var futurecontent = dmp.patch_apply (patch, content) [0];
-    // Figure out the difference w.r.t our working copy.
-    var change = dmp.diff_main (content, futurecontent);
-    var delta = Diff.delta (change);
-
-    // Apply changes to the content.
-    var car = 0;
-    var max = content.length;
-    var line = editor.firstLine();
-    for(var i = 0 ; i < delta.length ; i++ ) {
-      while(delta[i][2] > (car + editor.lineContent(line).length)) {
-        car += editor.lineContent(line).length + 1;
-        line = editor.nextLine(line);
-      }
-      var pos = (delta[i][2] - car < max ? delta[i][2] - car : "end" );
-      if(delta[i][0] == 1) {
-        editor.insertIntoLine(line, pos, delta[i][1]);
-      }
-      else {
-        editor.removeFromLine(line, pos, delta[i][1]);
-      }
+      // Send the new diff.
+      Scout.send (sending (decodeURI(dmp.diff_toDelta (newdiff))
+            .replace ('%','%25'))) ();
     }
   }
 };
 
+var givePlug = function (onnewcontent, onnewdiff) {
+  if (onnewcontent) {
+    plug.onnewcontent = onnewcontent;
+    onnewcontent (client.copy);
+
+    plug.onnewdiff = onnewdiff;
+  }
+  return plug;
+};
 
 
 
-// -- HERE BE AJAX SPACE.
+///  Synchronization components.
+//
+
+
 
 // We need this instance of scout to avoid conflicts.
 var Scout2 = Scout.maker ();
-
-
-//1. This place is specifically designed to receive information from the server.
 
 // client: { lastcopy: 'content before last sync' }
 // delta: patch (in delta form) to apply to our copy.
@@ -159,6 +114,9 @@ function sync (client, delta, workingcopy, applylocally, send) {
   }
 }
 
+
+//1. This place is specifically designed to receive information from the server.
+
 // Whenever we load the page, we shall send nothing to
 // the "in" action of the server.
 function getmodif (xhr, params) {
@@ -175,11 +133,17 @@ function getmodif (xhr, params) {
                  ', delta : ' + JSON.stringify(resp.delta));
     
     // We sync it to our copy.
-    sync (client, resp.delta, editor.getValue (), function applylocally(patch) {
-      // Modifying the content.
-      client.notmychange = true;
-      extenditor.applypatch (patch, editor);
-      return editor.getValue ();
+    sync (client, resp.delta, client.copy, function applylocally(patch) {
+      // Get what our content should look like after this function runs.
+      var futurecontent = dmp.patch_apply (patch, client.copy) [0];
+      // Figure out the difference w.r.t our working copy.
+      var change = dmp.diff_main (client.copy, futurecontent);
+
+      // Consult plug.
+      client.copy = (plug.onnewdiff? plug.onnewdiff (change):
+        plug.onnewcontent (futurecontent));
+
+      return client.copy;
     }, function sendnewdelta (delta) {
       Scout.send (sending (delta)) ();
     });
@@ -204,7 +168,6 @@ var lastnetworkissue = 0;
 
 
 //2. This place is specifically designed to send information to the server.
-
 
 // We want to listen to the event of code modification.
 function sending (delta) {
@@ -235,5 +198,39 @@ function sending (delta) {
 }
 
 
-// The end.
-})();
+//3. This place handles getting it all the first time... and death.
+
+
+// Get the data.
+// WARNING: If there's a delay with codemirror, this might cause a problem.
+// Best is to place this call in an onLoad function.
+Scout.send (function (xhr, params) {
+  params.open.url = '/$data';
+  params.data.user = client.user;
+  params.resp = function (xhr, resp) {
+    console.log ('got content');///
+
+    client.copy = client.lastcopy = resp.data;
+
+    Scout2.send (getmodif) ();      // Make the first dispatch link.
+  };
+}) ();
+
+// When we leave, tell the server.
+window.onunload = function () {
+  Scout.send (function (xhr, params) {
+    params.open.url = '/$kill';
+    params.data.user = client.user;
+  }) ();
+};
+
+
+
+
+///  Exports.
+//
+
+
+window.getPlug = givePlug;
+
+}) ();

@@ -17,6 +17,11 @@ var users = {};
 
 // Update the copy corresponding to a user, because of user input.
 //
+// client: { lastcopy: 'content before last sync' }
+// delta: patch (in delta form) to apply to our copy.
+// workingcopy: content of our copy, as a string.
+// applylocally: function ( patch ) { return newWorkingCopy; }
+// send: function ( delta ) { }
 function sync (client, delta, workingcopy, applylocally, send) {
 
   // Patch last copy.
