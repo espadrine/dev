@@ -92,23 +92,26 @@ window.extenditor = {
     var futurecontent = dmp.patch_apply (patch, content) [0];
     // Figure out the difference w.r.t our working copy.
     var change = dmp.diff_main (content, futurecontent);
-    var delta = Diff.delta (change);
-
-    // Apply changes to the content.
-    var car = 0;
-    var max = content.length;
-    var line = editor.firstLine();
-    for(var i = 0 ; i < delta.length ; i++ ) {
-      while(delta[i][2] > (car + editor.lineContent(line).length)) {
-        car += editor.lineContent(line).length + 1;
-        line = editor.nextLine(line);
+    
+    for ( var i = 0, from = {'line':0,'ch':0}, to = {'line':0,'ch':0} ; i < change.length ; i++ ) {
+      if ( change[i][0] == 1 ) {
+        editor.replaceRange(change[i][1],from);
       }
-      var pos = (delta[i][2] - car < max ? delta[i][2] - car : "end" );
-      if(delta[i][0] == 1) {
-        editor.insertIntoLine(line, pos, delta[i][1]);
+      // find the changed range
+      to.ch += change[i][1].length;
+      var rest = change[i][1].length - editor.getRange(from,to).length;
+      while ( rest > 0 ) {
+        to.line++;
+        to.ch = rest-1;
+        rest = change[i][1].length - editor.getRange(from,to).length;
       }
-      else {
-        editor.removeFromLine(line, pos, delta[i][1]);
+      if ( change[i][0] == -1 ) {
+        editor.replaceRange('',from,to);
+        to.line = from.line;
+        to.ch = from.ch;
+      } else {
+        from.line = to.line;
+        from.ch = to.ch;
       }
     }
   }
