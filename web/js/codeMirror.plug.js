@@ -2,7 +2,7 @@
  * Copyright (c) 2011 Thaddee Tyl & Jan Keromnes. All rights reserved.
  * */
  
-function () {
+(function () {
 
 client.notmychange = false;
 
@@ -21,7 +21,7 @@ window.editor = new CodeMirror (document.body, {
       // Here, we consider the differences between current text
       // and the text we had last time we pushed changes.
       
-      plugger.newcontent (content);
+      plugger.newcontent (editor.getValue ());
     }
   },
 });
@@ -56,9 +56,9 @@ window.extenditor = {
 }
 
 
-var plugger = getPlug (function onnewcontent (content) {
+var plugger = getPlugger (function onnewcontent (content) {
   client.notmychange = true;
-  editor.setValue (resp.data);     // Put the data in the editor.
+  editor.setValue (content);     // Put the data in the editor.
   return editor.getValue ();
 }, function onnewdiff (diff) {
   client.notmychange = true;
