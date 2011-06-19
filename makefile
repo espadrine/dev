@@ -8,31 +8,31 @@ SOURCE = web
 JSMIN = jsmin
 MIN = min
 
-build : clean deploy minify
+build: clean deploy minify
 
-clean :
+clean:
 	rm -rf $(TARGET)/* $(LOG)
 
-deploy :
+deploy:
 	cp -r $(SOURCE)/* $(TARGET)
 
-minify :
+minify:
 	for file in `find $(TARGET) -name '*\.js'` ; do cat "$${file}" | $(JSMIN) > "$${file}$(MIN)" ; mv "$${file}$(MIN)" "$${file}" ; done
 
-test :
+test:
 	cd $(SOURCE) ; sudo node ../$(SERVER)
 
-start : stop
+start:
 	cd $(TARGET) ; sudo nohup node ../$(SERVER) > ../$(LOG) &
 
-stop :
+stop:
 	for pid in `ps aux | grep node | grep $(SERVER) | awk '{print $$2}'` ; do sudo kill $$pid 2> /dev/null ; done
 
 # time for a break
-coffee :
+coffee:
 	@echo "\n           )      (\n           (  )   )\n         _..,-(--,.._\n      .-;'-.,____,.-';\n     (( |            |\n      \`-;            ;\n         \\          /	\n      .-''\`-.____.-'''-.\n     (     '------'     )\n      \`--..________..--'\n";
 
 # http://xkcd.com/149/
-sandwich :
+sandwich:
 	@if [ `id -u` = "0" ] ; then echo "\nOKAY." ; else echo "\nWhat? Make it yourself." ; fi
 
