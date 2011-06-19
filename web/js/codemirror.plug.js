@@ -39,7 +39,10 @@ window.extenditor = {
       to.ch += change[i][1].length;
       var rest = change[i][1].length - editor.getRange(from,to).length;
       while ( rest > 0 ) {
-        to.line++;
+        if ( to.line++ > editor.lineCount() ) {
+          console.log('error: delta length inconsistency');
+          break;
+        }
         to.ch = rest-1;
         rest = change[i][1].length - editor.getRange(from,to).length;
       }
