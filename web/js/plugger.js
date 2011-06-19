@@ -211,6 +211,7 @@ Scout.send (function (xhr, params) {
     console.log ('got content');///
 
     client.copy = client.lastcopy = resp.data;
+    plug.onnewcontent (client.copy);
 
     Scout2.send (getmodif) ();      // Make the first dispatch link.
   };
