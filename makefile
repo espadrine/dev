@@ -22,7 +22,7 @@ test :
 	cd $(SOURCE) ; sudo node ../$(SERVER)
 	
 start :
-	cd $(TARGET) ; sudo nohup node ../$(SERVER) > ../node.log &
+	cd $(TARGET) ; sudo nohup node ../$(SERVER) > ../node.log
 	
 stop :
 	for pid in `ps aux | grep node | grep $(SERVER) | awk '{print $$2}'` ; do sudo kill $$pid 2> /dev/null ; done

@@ -63,7 +63,7 @@ var plug = {
 var givePlug = function (onnewcontent, onnewdiff) {
   if (onnewcontent) {
     plug.onnewcontent = onnewcontent;
-    onnewcontent (client.copy);
+    client.copy = onnewcontent (client.copy);
 
     plug.onnewdiff = onnewdiff;
   }
@@ -231,6 +231,17 @@ window.onunload = function () {
 //
 
 
-window.getPlug = givePlug;
+//   getPlugger ( onnewcontent, onnewdiff )
+//
+// The onnewcontent ( content ) function is fired every time there is new
+// content, and we need to clean all content up.
+// The optional onnewdiff ( diff ) function is fired when there is new content
+// to take into account, and the onnewdiff function exists.
+// Those functions must both return the current content of the data.
+//
+// The result has a method newcontent ( content ) that sends the new content to
+// the server.
+//
+window.getPlugger = givePlug;
 
 }) ();
