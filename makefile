@@ -22,8 +22,8 @@ minify :
 test :
 	cd $(SOURCE) ; sudo node ../$(SERVER)
 
-start :
-	cd $(TARGET) ; sudo nohup node ../$(SERVER) > ../$(LOG)
+start : stop
+	cd $(TARGET) ; sudo nohup node ../$(SERVER) > ../$(LOG) &
 
 stop :
 	for pid in `ps aux | grep node | grep $(SERVER) | awk '{print $$2}'` ; do sudo kill $$pid 2> /dev/null ; done
