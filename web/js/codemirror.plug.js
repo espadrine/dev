@@ -2,32 +2,11 @@
  * Copyright (c) 2011 Jan Keromnes, Thaddee Tyl. All rights reserved.
  * Code covered by the LGPL license. */
  
-(function () {
+function CodeMirrorPlug ( editor ) {
 
 client.notmychange = false;
 
-
-// Create a CodeMirror2 html editor.
-window.editor = new CodeMirror (document.body, {
-  value: window.client.lastcopy,
-  height: "100%",
-  width: "50%",
-  mode: "text/html",
-  tabMode: "indent",
-  onChange: function () {
-    if (client.notmychange) {
-      client.notmychange = false;
-    } else {
-      // Here, we consider the differences between current text
-      // and the text we had last time we pushed changes.
-      
-      plugger.newcontent (editor.getValue ());
-    }
-  },
-});
-
-
-window.extenditor = {
+var extenditor = {
   applydiff : function(change, editor) {
     for ( var i = 0, from = {'line':0,'ch':0}, to = {'line':0,'ch':0} ;
         i < change.length ; i++ ) {
@@ -57,8 +36,7 @@ window.extenditor = {
   }
 }
 
-
-var plugger = getPlugger (function onnewcontent (content) {
+return getPlugger (function onnewcontent (content) {
   client.notmychange = true;
   editor.setValue (content);     // Put the data in the editor.
   return editor.getValue ();
@@ -68,6 +46,4 @@ var plugger = getPlugger (function onnewcontent (content) {
   return editor.getValue ();
 });
 
-
-
-}) ();
+}

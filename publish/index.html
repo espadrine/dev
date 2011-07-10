@@ -1,8 +1,20 @@
 <!doctype html>
-<title>Our Awesome Code Editor</title>
 <meta charset=utf-8>
+<title>Our Awesome Code Editor</title>
+
 <link rel=stylesheet href=./css/codemirror.css>
 <link rel=stylesheet href=./css/default.css>
+
+<script src=./js/codemirror.js></script>
+<script src=./js/xml.js></script>
+<script src=./js/javascript.js></script>
+<script src=./js/css.js></script>
+<script src=./js/htmlmixed.js></script>
+<script src=./js/diff_match_patch.js></script>
+<script src=./js/scout.js></script>
+<script src=./js/plugger.js></script>
+<script src=./js/codemirror.plug.js></script>
+
 <style>
   html body { margin: 0px; padding: 0px; width: 100%; height: 100%; position: absolute; }
   iframe body { margin: 0px; padding: 0px; }
@@ -13,25 +25,39 @@
 <body>
 
   <iframe id=preview class=right></iframe>
+  
   <script>
-  // Regularily inject the code into an iframe for preview.
-  setInterval (function() {
-    var preview = document.getElementById ('preview').contentDocument;
-    //preview.open ();
-    preview.write (editor.getValue ());
-    preview.close ();
-  }, 500);
+  
+    // Create a CodeMirror2 html editor.
+    var editor = new CodeMirror (document.body, {
+      value: window.client.lastcopy,
+      height: "100%",
+      width: "50%",
+      mode: "text/html",
+      tabMode: "indent",
+      onChange: function () {
+        if (client.notmychange) {
+          client.notmychange = false;
+        } else {
+          // Here, we consider the differences between current text
+          // and the text we had last time we pushed changes.
+          
+          plug.newcontent (editor.getValue ());
+        }
+      },
+    });
+    
+    var plug = CodeMirrorPlug(editor);
+    
+    // Regularily inject the code into an iframe for preview.
+    setInterval (function() {
+      var preview = document.getElementById ('preview').contentDocument;
+      //preview.open ();
+      preview.write (editor.getValue ());
+      preview.close ();
+    }, 500);
+    
   </script>
   
-  <script src=./js/codemirror.js></script>
-  <script src=./js/xml.js></script>
-  <script src=./js/javascript.js></script>
-  <script src=./js/css.js></script>
-  <script src=./js/htmlmixed.js></script>
-
-  <script src=./js/diff_match_patch.js></script>
-  <script src=./js/scout.js></script>
-  <script src=./js/plugger.js></script>
-  <script src=./js/codemirror.plug.js></script>
   
 </body>
