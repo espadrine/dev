@@ -38,7 +38,7 @@
       onChange: function () {
         if (client.notmychange) {
           client.notmychange = false;
-        } else {
+        } else if (plug !== undefined) {
           // Here, we consider the differences between current text
           // and the text we had last time we pushed changes.
           
