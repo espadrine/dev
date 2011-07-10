@@ -1,5 +1,6 @@
 /* server.js: run this with Node.js in the publish/ folder to start your server.
- * Copyright (c) 2011 Jan Keromnes, Yann Tyl. All rights reserved. */
+ * Copyright (c) 2011 Jan Keromnes, Yann Tyl. All rights reserved.
+ * Code covered by the LGPL license. */
 
 var COPY = "<!doctype html>\n<title><\/title>\n\n<body>\n  <canvas id=tutorial width=150 height=150><\/canvas>\n\n  <script>\n    var canvas = document.getElementById('tutorial');\n    var context = canvas.getContext('2d');\n\n    context.fillStyle = 'rgb(250,0,0)';\n    context.fillRect(10, 10, 55, 50);\n\n    context.fillStyle = 'rgba(0, 0, 250, 0.5)';\n    context.fillRect(30, 30, 55, 50);\n  <\/script>\n<\/body>";
 
@@ -7,18 +8,19 @@ var DMP = require ('./lib/diff_match_patch.js');
 var DIFF_EQUAL = DMP.DIFF_EQUAL;
 var dmp = new DMP.diff_match_patch ();
 
-// Each user is identified by a number (might be converted to a string),
-// and has an associated lastcopy.
-//   eg, users = {'1234': {lastcopy: 'foo bar...',
-//                         bufferhim: false, // To see if we need to buffer.
-//                         buffer: [],       // To be sent on dispatch.
-//                         timeout: 0}}     // Before we forget this user.
+
+// Each user is identified by a number, and has an associated lastcopy.
+// eg, users = {'1234': {lastcopy: 'foo bar...',
+//                       bufferhim: false, // Do we need to buffer for him?
+//                       buffer: [],       // Deltas to be sent on dispatch.
+//                       timeout: 0}}      // Time before we forget this user.
 var users = {};
+
 
 // Update the copy corresponding to a user, because of user input.
 //
 // client: { lastcopy: 'content before last sync' }
-// delta: patch (in delta form) to apply to our copy.
+// delta: patch in delta form to apply to our copy.
 // workingcopy: content of our copy, as a string.
 // applylocally: function ( patch ) { return newWorkingCopy; }
 // send: function ( delta ) { }
@@ -57,14 +59,13 @@ function sync (client, delta, workingcopy, applylocally, send) {
 var Camp = require ('./lib/camp.js');
 
 
-// Buffer of modifications.
+// Buffering modifications.
 var TimeoutBetweenDispatches = 60 * 40000;  // 4 min.
 var userbuffer = {};
 var usertimeouts = {};
 
 
-// First time someone connects, he sends a content action.
-
+// First time someone connects, he sends a data request.
 Camp.add ('data', function (query) {
   users[query.user] = {
     lastcopy: COPY,
@@ -75,11 +76,12 @@ Camp.add ('data', function (query) {
   return {data: COPY? COPY: '\n'}; // If there is something to be sent, send it.
 });
 
-// Remove a user.
+
+// Removing a user.
 Camp.add ('kill', function (query) { delete users[query.user]; });
 
 
-// We get information on the 'new' channel.
+// We receive incoming deltas on the 'new' channel.
 // query = { user: 12345, delta: "=42+ =12", rev: 1 }
 
 Camp.add ('new', function addnewstuff (query) {
@@ -91,13 +93,14 @@ Camp.add ('new', function addnewstuff (query) {
     return {};
   }
   
-  // Caching for those in need.
+  // Caching for users temporarily not listening to dispatch.
   for (var user in users) {
     if (users[user].bufferhim && user != query.user) {
       console.log ('--caching',query.delta,'for user',user);
       users[user].buffer.push (query);
     }
   }
+  
   // Change our copy.
   console.log ('--sync', query.delta);
   var newdelta = query.delta;
@@ -113,7 +116,7 @@ Camp.add ('new', function addnewstuff (query) {
 });
 
 
-// We send information on the 'dispatch' channel.
+// We send outgoing deltas through the 'dispatch' channel.
 
 Camp.add ('dispatch', function (query) {
   console.log ('--connect dispatch [' + query.user + ']');
@@ -154,7 +157,7 @@ Camp.add ('dispatch', function (query) {
       return resp;             // Send the modification to the client.
 
     } else {
-      return undefined;        // The user mustn't receive its own modification.
+      return undefined;        // The user mustn't receive his own modification.
     }
   };
 });

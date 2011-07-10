@@ -1,13 +1,13 @@
-/* plugger.js: allows plugs to have an api into the nifty collaboration engine.
- * Copyright (c) 2011 Thaddee Tyl & Jan Keromnes. All rights reserved.
- * */
+/* codemirror.plug.js: glue between our collaboration engine and CodeMirror2.
+ * Copyright (c) 2011 Jan Keromnes, Thaddee Tyl. All rights reserved.
+ * Code covered by the LGPL license. */
  
 (function () {
 
 client.notmychange = false;
 
 
-// Information we keep on code mirror.
+// Create a CodeMirror2 html editor.
 window.editor = new CodeMirror (document.body, {
   value: window.client.lastcopy,
   height: "100%",
@@ -29,7 +29,6 @@ window.editor = new CodeMirror (document.body, {
 
 window.extenditor = {
   applydiff : function(change, editor) {
-    
     for ( var i = 0, from = {'line':0,'ch':0}, to = {'line':0,'ch':0} ;
         i < change.length ; i++ ) {
       if ( change[i][0] == 1 ) {
