@@ -28,36 +28,29 @@
   
   <script>
   
+    var delay;
+  
     // Create a CodeMirror2 html editor.
-    var editor = new CodeMirror (document.body, {
+    editor = CodeMirrorPlug(document.body, {
       value: window.client.lastcopy,
       height: "100%",
       width: "50%",
       mode: "text/html",
-      tabMode: "indent",
+      tabMode: "indent"
+    }, function updatedisplay() {
+      clearTimeout(delay);
+      delay = setTimeout(updatePreview, 300);
     });
 
-    editor.onChange = function () {
-      console.log('flowing through');
-      if (client.notmychange) {
-        client.notmychange = false;
-      } else if (plug !== undefined) {
-        // Here, we consider the differences between current text
-        // and the text we had last time we pushed changes.
-        
-        plug.newcontent (editor.getValue ());
-      }
-    };
-    
-    var plug = CodeMirrorPlug(editor);
     
     // Regularily inject the code into an iframe for preview.
-    setInterval (function() {
-      var preview = document.getElementById ('preview').contentDocument;
-      //preview.open ();
-      preview.write (editor.getValue ());
-      preview.close ();
-    }, 500);
+    function updatePreview() {
+      var preview = document.getElementById('preview').contentDocument;
+      preview.open();
+      preview.write(editor.getValue());
+      preview.close();
+    }
+    setTimeout(updatePreview, 300);
     
   </script>
   

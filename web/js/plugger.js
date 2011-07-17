@@ -51,7 +51,7 @@ var plug = {
     if (newdiff.length !== 1 || newdiff[0][0] !== DIFF_EQUAL) {
 
       // Update the last copy.
-      client.lastcopy = content;
+      client.copy = client.lastcopy = content;
 
       // Send the new diff.
       Scout.send (sending (decodeURI(dmp.diff_toDelta (newdiff))
