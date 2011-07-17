@@ -2,11 +2,13 @@
  * Copyright (c) 2011 Jan Keromnes, Thaddee Tyl. All rights reserved.
  * Code covered by the LGPL license. */
  
-function CodeMirrorPlug ( body, cm_params ) { 
+function CodeMirrorPlug ( body, cm_params, uiactions ) { 
 
 // Add onChange to the CodeMirror parameters.
 // Creation of the editor.
-cm_params.onChange = function () {
+cm_params.onChange = function onChange() {
+  uiactions();  // Page elements
+
   console.log('flowing through');
   if (client.notmychange) {
     client.notmychange = false;
@@ -62,5 +64,7 @@ var plug = getPlugger (function onnewcontent (content) {
   extenditor.applydiff (diff, editor);
   return editor.getValue ();
 });
+
+return editor;
 
 }
