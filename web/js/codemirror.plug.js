@@ -2,10 +2,26 @@
  * Copyright (c) 2011 Jan Keromnes, Thaddee Tyl. All rights reserved.
  * Code covered by the LGPL license. */
  
-function CodeMirrorPlug ( editor ) {
+function CodeMirrorPlug ( body, cm_params ) { 
 
+// Add onChange to the CodeMirror parameters.
+// Creation of the editor.
+cm_params.onChange = function () {
+  console.log('flowing through');
+  if (client.notmychange) {
+    client.notmychange = false;
+  } else if (plug !== undefined) {
+    // Here, we consider the differences between current text
+    // and the text we had last time we pushed changes.
+    
+    plug.newcontent (editor.getValue ());
+  }
+};
+var editor = CodeMirror (body, cm_params);
+
+
+// Some useful primitive that talks to the CodeMirror editor.
 client.notmychange = false;
-
 var extenditor = {
   applydiff : function(change, editor) {
     for ( var i = 0, from = {'line':0,'ch':0}, to = {'line':0,'ch':0} ;
@@ -36,7 +52,8 @@ var extenditor = {
   }
 }
 
-return getPlugger (function onnewcontent (content) {
+// Creation of the plugger.
+var plug = getPlugger (function onnewcontent (content) {
   client.notmychange = true;
   editor.setValue (content);     // Put the data in the editor.
   return editor.getValue ();

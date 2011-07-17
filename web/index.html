@@ -29,25 +29,14 @@
   <script>
   
     // Create a CodeMirror2 html editor.
-    var editor = new CodeMirror (document.body, {
+    plug = CodeMirrorPlug (document.body, {
       value: window.client.lastcopy,
       height: "100%",
       width: "50%",
       mode: "text/html",
       tabMode: "indent",
-      onChange: function () {
-        if (client.notmychange) {
-          client.notmychange = false;
-        } else if (plug !== undefined) {
-          // Here, we consider the differences between current text
-          // and the text we had last time we pushed changes.
-          
-          plug.newcontent (editor.getValue ());
-        }
-      },
     });
-    
-    var plug = CodeMirrorPlug(editor);
+
     
     // Regularily inject the code into an iframe for preview.
     setInterval (function() {
