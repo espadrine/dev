@@ -7,7 +7,8 @@
 
 var debug = true;
 // IE doesn't have a console, but we avoid a crash thanks to this.
-var console = (console && debug)? console: {
+//alert(window.console);
+var console = (window.console && debug)? window.console: {
   log: function(){
     for (var arg in arguments)
       console.data = (console.data?console.data:'') + arg + ' ';

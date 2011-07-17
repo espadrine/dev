@@ -9,7 +9,6 @@ function CodeMirrorPlug ( body, cm_params, uiactions ) {
 cm_params.onChange = function onChange() {
   uiactions();  // Page elements
 
-  console.log('flowing through');
   if (client.notmychange) {
     client.notmychange = false;
   } else if (plug !== undefined) {
